@@ -1,0 +1,10 @@
+body { margin: 0px; } 
+
+#operatorIdDiv { width: 100%; text-align: center; } 
+#operatorId { font-weight: bold; } 
+#sbIndexLink { position: absolute; top: 2px; right: 2px; } 
+#helpLink { float: left; }
+
+#tabsDiv>div.TabContent { padding: 2px; overflow: auto; } 
+#capsLockWarning { padding: .5em 1em; color: white; } 
+#logoutButton { float: right; }

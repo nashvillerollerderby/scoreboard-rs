@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Penalty Box Timer | Roller Derby ScoreBoard</title>
+
+    <script type="text/javascript" src="/external/jquery/jquery.js"></script>
+    <script type="text/javascript" src="/json/core.js"></script>
+  </head>
+
+  <body sbContext="ScoreBoard.CurrentGame" sbSheetStyle="pbt">
+    <div class="sbSegment" id="List" sbInclude="/components/penalty-list/"></div>
+    <div class="sbSegment" id="Unassigned">
+      <div class="sbGroup sbHeader">
+        <span class="col1"><button class="sbNoDistract" id="SwapTeams" sbCall="toggleSwap">Swap Teams</button></span>
+        <span
+          class="perTeam"
+          sbForeach="Team: 1,2: only"
+          sbDisplay="AlternateName(box),UniformColor,Name"
+          sbCss="color: Color(penalty.fg) | background-color: Color(penalty.bg) | text-shadow: Color(penalty.glow): sbCssToShadow"
+        ></span>
+      </div>
+      <div class="sbGroup">
+        <span class="col1">Edit/Pre-Select:</span>
+        <span class="perTeam" sbForeach="Team: 1,2: only">
+          <button
+            sbForeach="Position: Jammer, Pivot, Blocker1, Blocker2, Blocker3: only"
+            sbClass="sbUnserved: HasUnserved | sbInBox: PenaltyBox"
+            sbDisplay="RosterNumber: penQuestionMarkIfEmpty"
+            sbCall="positionDetails"
+          ></button>
+        </span>
+      </div>
+      <div class="sbGroup" sbForeach="BoxTrip:: time" sbAttr="time: Clock.Time" sbPrefix="b: [*]">
+        <span class="col1 sbStack">
+          <button sbSet="Delete">Cancel</button>
+          <span>Remaining: <span class="sbImportant sbClock" sbDisplay="Clock.Time: sbToSeconds"></span></span>
+        </span>
+        <span class="perTeam" sbContext="^" sbForeach="Team: 1,2: only">
+          <button
+            sbForeach="Position: Jammer, Pivot, Blocker1, Blocker2, Blocker3: only"
+            sbClass="sbUnserved: HasUnserved | sbInBox: PenaltyBox"
+            sbProp="disabled: PenaltyBox"
+            sbDisplay="RosterNumber: penQuestionMarkIfEmpty"
+            sbSet="b.CurrentFielding: penGetFielding"
+          ></button>
+        </span>
+      </div>
+    </div>
+    <div class="sbSegment" id="Buttons">
+      <div class="sbGroup">
+        <button sbSet="StartBoxTrip">Blocker Sat Down</button>
+        <button sbSet="StartJammerBoxTrip">Jammer Sat Down</button>
+      </div>
+    </div>
+
+    <div class="sbTemplates">
+      <div id="PositionDetails" class="sbSegment" sbContext="Team(*).Position(*)">
+        <div class="sbGroup" sbClass="edit: Skater: sbIsEmpty">
+          <span class="onNoEdit"><button sbCall="elem.closest('div').addClass('forceEdit')">Edit Lineup</button></span>
+          <span class="onEdit">Skater: </span>
+          <span class="onEdit" sbButtonGroup sbPrefix="p:[*]">
+            <button sbClass="sbActive: p.Skater: sbIsEmpty" sbSet="p.Skater: ''">?</button>
+            <button
+              sbForeach="^Skater:: rosterNumber: resort=RosterNumber"
+              sbAttr="rosterNumber: RosterNumber"
+              sbDisplay="RosterNumber"
+              sbClass="sbActive: p.Skater: === elem.attr('Skater') | sbHide: Role: === 'NotInGame' | sbIneligible: Role: === 'Ineligible'"
+              sbSet="p.Skater: elem.attr('Skater')"
+              sbCall="closeDialogIfInBox"
+            ></button>
+          </span>
+        </div>
+        <div class="sbGroup" sbClass="sbHide: Skater: sbIsEmpty">
+          <span>Penalties:</span>
+          <span sbDisplay="PenaltyDetails: penDetailButtons: html"></span>
+          <span><button sbCall="addPenalty">Add</button></span>
+          |
+          <span>Total: <span sbDisplay="PenaltyCount"></span></span>
+        </div>
+        <div class="sbGroup" sbClass="sbHide: Skater: sbIsEmpty">
+          <span sbClass="sbHide: PenaltyBox, CurrentBoxSymbols: noUnend">
+            <button sbSet="UnendBoxTrip" sbCall="sbCloseDialog">Unend Box Trip</button>
+          </span>
+          <span sbClass="sbHide: PenaltyBox"
+            >Unserved Time:
+            <button sbSet="ExtraPenaltyTime: -1000: change">-1</button>
+            <input type="number" size="5" sbControl="ExtraPenaltyTime: sbToTime: sbFromTime" />
+            <button sbSet="ExtraPenaltyTime: +1000: change">+1</button>
+          </span>
+        </div>
+        <div class="sbGroup" sbClass="sbHide: Skater: sbIsEmpty">
+          <button class="StartButton" sbClass="sbHide: PenaltyBox" sbSet="StartBoxClock" sbCall="closeDialogIfSkater">Skater Sat Down</button>
+          <button
+            sbClass="sbHide: PenaltyBox: ! | sbClickMe: PenaltyTime: <=0"
+            sbSet="PenaltyBox: false"
+            sbCall="sbCloseDialog"
+            sbDisplay="Clock.Time: penLeftText"
+          ></button>
+        </div>
+      </div>
+
+      <div id="UsePBTDialog">Use of Penalty Box Timing is disabled.</div>
+    </div>
+  </body>
+</html>

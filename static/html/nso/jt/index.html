@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jam Timer | Roller Derby ScoreBoard</title>
+
+    <script type="text/javascript" src="/external/jquery/jquery.js"></script>
+    <script type="text/javascript" src="/json/core.js"></script>
+  </head>
+
+  <body sbContext="ScoreBoard.CurrentGame">
+    <div class="Clocks">
+      <div class="Group Period">
+        <div class="Clock" sbClass="sbHide: ^Clock(Intermission).Running | Running: Running | NoMoreJam: ^NoMoreJam" sbContext="Clock(Period)">
+          <div class="ClockName AutoFit"><span sbDisplay="Name" sbAutoFitOn="Running"></span> <span sbDisplay="Number"></span></div>
+          <div class="Time AutoFit sbClock">
+            <button sbSet="Time: -1000: change">-</button>
+            <span sbDisplay="Time: sbToLongTime"></span>
+            <button sbSet="Time: +1000: change">+</button>
+          </div>
+        </div>
+        <div class="Clock" sbClass="sbHide: Running: ! | Running: Running" sbContext="Clock(Intermission)">
+          <div class="ClockName AutoFit"><span sbDisplay="Name" sbAutoFitOn="Running"></span> <span sbDisplay="Number"></span></div>
+          <div class="Time AutoFit sbClock">
+            <button sbSet="Time: -1000: change">-</button>
+            <span sbDisplay="Time: sbToLongTime"></span>
+            <button sbSet="Time: +1000: change">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="Group Jam">
+        <div sbForeach="Clock: Jam, Lineup, Timeout: only" class="Clock" sbClass="Running: Running | InJam: ^InJam | NoMoreJam: ^NoMoreJam">
+          <div class="ClockName AutoFit"><span sbDisplay="Name"></span> <span sbDisplay="Number"></span></div>
+          <div class="Time AutoFit sbClock">
+            <button sbSet="Time: -1000: change">-</button>
+            <span sbDisplay="Time: sbToLongTime"></span>
+            <button sbSet="Time: +1000: change">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="TimeoutType">
+      <div class="Teams">
+        <div class="Group" sbForeach="Team: 1,2: only">
+          <div
+            class="TeamName AutoFit"
+            sbDisplay="AlternateName(Operator),UniformColor,Name"
+            sbCss="color: Color(operator.fg) | background-color: Color(operator.bg) | text-shadow: Color(operator.glow): sbCssToShadow"
+          ></div>
+          <div class="ToButtonRow TTO">
+            <div class="Button">
+              <button class="AutoFit" sbClass="sbActive: Id,^TimeoutOwner, ^OfficialReview: sbIsToThisTeam" sbSet="Timeout">Timeout</button>
+            </div>
+            <div class="Count AutoFit" sbDisplay="Timeouts"></div>
+          </div>
+          <div class="ToButtonRow OR">
+            <div class="Button">
+              <button class="AutoFit" sbClass="sbActive: Id,^TimeoutOwner, ^OfficialReview: sbIsOrThisTeam" sbSet="OfficialReview">Review</button>
+            </div>
+            <div class="Count AutoFit" sbDisplay="OfficialReviews"></div>
+          </div>
+          <div class="ToButtonRow Retained">
+            <div class="Button"><button class="AutoFit" sbToggle="RetainedOfficialReview">Retained</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="Group OTO">
+        <button class="AutoFit" sbClass="sbActive: TimeoutOwner: ==='O'" sbSet="OfficialTimeout">Official TO</button>
+      </div>
+    </div>
+    <div class="Group MainButtons">
+      <div class="Settings" sbClass="sbHide: Label(Undo): === 'No Action'">
+        <div class="Continuation">
+          <button
+            class="AutoFit"
+            sbClass="sbHide: Rule(Jam.InjuryContinuation), Team(1).Injury: jtPossiblInjCont"
+            sbToggle="InjuryContinuationUpcoming"
+          >
+            Continuation Upcoming
+          </button>
+        </div>
+        <div class="ToggleUndo"><button class="AutoFit" sbCall="jtToggleUndoEnabled">Show Undo</button></div>
+        <div class="showOnUndoEnabled sbHide Replace">
+          <button class="AutoFit" id="ReplaceButton_Setting" sbCall="jtToggleSetting">Use Replace on Undo</button>
+        </div>
+      </div>
+      <div class="ReplaceInfo AutoFit sbHide" sbClass="sbHide: Label(Undo): !== 'No Action'">
+        <span>Replace &quot;<span sbDisplay="Label(Replaced)"></span>&quot; with</span>
+      </div>
+      <div class="Undo showOnUndoEnabled sbHide"><button class="AutoFit Big" sbCall="jtUndo" sbDisplay="Label(Undo)"></button></div>
+      <div class="Start">
+        <button
+          class="AutoFit Big"
+          sbClass="sbClickMe: Rule(Lineup.Duration), Rule(Lineup.OvertimeDuration), Clock(Lineup).Running, Clock(Lineup).Time, InOvertime: sbLineupTooLong"
+          sbSet="StartJam"
+          sbDisplay="Label(Start)"
+        ></button>
+      </div>
+      <div class="Stop">
+        <button class="AutoFit Big" sbClass="sbClickMe: InJam, Clock(Jam).Running: sbJamTooLong" sbSet="StopJam" sbDisplay="Label(Stop)"></button>
+      </div>
+      <div class="Timeout">
+        <button
+          class="AutoFit Big"
+          sbClass="sbClickMe: Rule(Lineup.Duration), Rule(Lineup.OvertimeDuration), Clock(Lineup).Running, Clock(Lineup).Time, InOvertime: sbLineupTooLong"
+          sbSet="Timeout"
+          sbDisplay="Label(Timeout)"
+        ></button>
+      </div>
+    </div>
+  </body>
+</html>

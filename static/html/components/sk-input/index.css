@@ -1,0 +1,29 @@
+/* mirror team 2 */
+body:not([showTeam="2"]):not([swapTeams]) [Team] ~ [Team]>.SkInput>.sbGroup:not(.sbStack)  { flex-direction: row-reverse; }
+body:not([showTeam="2"]):not([swapTeams]) [Team] ~ [Team]>.SkInput .ScoreRow  { flex-direction: row-reverse; }
+body:not([showTeam="2"]):not([swapTeams]) [Team] ~ [Team]>.SkInput .Timeouts > span  { flex-direction: row-reverse; }
+body:not([showTeam="1"])[swapTeams] [Team]:first-child>.SkInput>.sbGroup:not(.sbStack)  { flex-direction: row-reverse; }
+body:not([showTeam="1"])[swapTeams] [Team]:first-child>.SkInput .ScoreRow  { flex-direction: row-reverse; }
+body:not([showTeam="1"])[swapTeams] [Team]:first-child>.SkInput .Timeouts > span  { flex-direction: row-reverse; }
+
+/* name/logo row */
+.SkInput img.Logo { height: 50px; max-width: 200px; }
+.SkInput .sbGroup.Name { height: 50px; }
+.SkInput .sbGroup.Name>div { flex:content; }
+.SkInput .sbGroup.Name>div.Name { flex: 3 0 content; }
+
+/* timeout row */
+.SkInput .Timeouts > div { flex: 1; }
+.SkInput .Timeouts > span { flex: 5; display: flex; height: fit-content; }
+.SkInput .Timeouts > span.OR { border-right: var(--group-border-top); border-left: var(--group-border-top); padding-left: .5em; padding-right: .5em; }
+.SkInput .Timeouts > span > .ToNumber { flex: 1; align-self: center; height: fit-content; }
+.SkInput .Timeouts > span > .ToButton { flex: 2; align-self: center; height: fit-content; z-index: 1 }
+.SkInput .Timeouts { position: relative; }
+.SkInput .OfficialTimeout>div { position: absolute; right: calc(50% + (0.5 * var(--segment-gap))); width: 100%; }
+[swapTeams] .SkInput .OfficialTimeout>div { left: calc(50% + (0.5 * var(--segment-gap))); }
+.SkInput .OfficialTimeout button { transform: translateY(-50%) var(--button-transform); }
+.SkInput .OfficialTimeout button:hover { transform: translateY(-50%) var(--button-hover-transform); }
+
+/* jammer/pivot rows */
+.SkInput .HasPlayed:not(.sbActive) { box-shadow: inset 0px 0px 4px 4px var(--element-active-bg), var(--button-shadow); }
+.SkInput .HasPlayed:not(.sbActive):hover { box-shadow: inset 0px 0px 4px 4px var(--element-active-bg), var(--button-hover-shadow); }

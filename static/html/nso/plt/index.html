@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title sbContext="ScoreBoard.Game([game]).Team(*)" sbDisplay="AlternateName(plt), UnifomrColor, Name: toTitle">
+      Penalty Lineup Tracker | Roller Derby ScoreBoard
+    </title>
+
+    <script type="text/javascript" src="/external/jquery/jquery.js"></script>
+    <script type="text/javascript" src="/json/core.js"></script>
+  </head>
+  <body sbContext="ScoreBoard.Game([game])">
+    <div class="Content">
+      <div class="GameAdvance" sbInclude="/components/game-advance/"></div>
+      <div sbForeach="Team: 1,2: only" sbInclude="/components/plt-input/" class="Input"></div>
+      <div
+        class="JamAdvance sbShowOnLt sbImportant"
+        sbClass="adv1pending: Team(1).FieldingAdvancePending | adv2pending: Team(2).FieldingAdvancePending"
+      >
+        <button class="sbClickMe" sbCall="advanceFieldings">Go To Next Jam</button>
+      </div>
+      <div class="sbShowOnLt Sheet" sbForeach="Team: 1,2: only" sbInclude="/components/lt-sheet/"></div>
+    </div>
+    <div class="SettingsButton sbSegment">
+      <div class="sbGroup"><button sbCall="openOptionsDialog">Settings</button></div>
+    </div>
+
+    <div id="OptionsDialog" sbPrefix="$: ScoreBoard.Settings.Setting(ScoreBoard.Penalties.UseLT)">
+      <div class="sbSegment">
+        <div class="sbGroup sbHeader">Select Team</div>
+        <div class="sbGroup Teams">
+          <button team="1" sbCall="setTeam" sbContext="Team(1)" sbDisplay="AlternateName(plt),UniformColor,Name">Team 1</button>
+          <button team="2" sbCall="setTeam" sbContext="Team(2)" sbDisplay="AlternateName(plt),UniformColor,Name">Team 2</button>
+          <button team="both" sbCall="setTeam">Both Teams</button>
+        </div>
+      </div>
+      <div class="sbSegment">
+        <div class="sbGroup sbHeader">Select Position</div>
+        <div class="sbGroup Positions">
+          <button pos="pt" sbCall="setPos">PT</button>
+          <button pos="plt" sbProp="disabled: $: !" sbCall="setPos">PLT</button>
+          <button pos="lt" sbProp="disabled: $: !" sbCall="setPos">LT</button>
+        </div>
+      </div>
+      <div class="sbSegment">
+        <div class="sbGroup sbHeader">Options</div>
+        <div class="sbGroup"><button sbToggle="$">Enable Lineup Tracking</button></div>
+        <div class="sbGroup">
+          <button sbToggle="/ScoreBoard.Settings.Setting(ScoreBoard.Penalties.UsePBT)">Enable Penalty Box Timing</button>
+        </div>
+        <div class="sbGroup">
+          <button sbToggle="/ScoreBoard.Settings.Setting(ScoreBoard.HideLineups)">Hide Lineups Before Jam Start</button>
+        </div>
+        <div class="sbGroup"><button id="OptionNonSkaters" sbCall="setNonSkaters">Show Non-Skaters</button></div>
+        <div class="sbGroup"><button id="OptionSwapTeams" sbCall="setSwapTeams">SwapTeams</button></div>
+        <div class="sbGroup"><button id="OptionZoomable" sbCall="setZoom">Allow Pinch Zoom</button></div>
+      </div>
+    </div>
+
+    <div id="UseLTDialog">Use of Lineup Tracking is disabled.</div>
+  </body>
+</html>

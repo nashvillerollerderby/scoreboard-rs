@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "target": "ES6"
+  },
+  "exclude": ["node_modules", "**/node_modules/*"],
+  "include": ["index.js", "components/**/*", "external/**/*", "javascript/**/*", "json/**/*", "nso/**/*", "settings/**/*", "views/**/*"]
+}

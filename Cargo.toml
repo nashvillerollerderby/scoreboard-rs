@@ -1,0 +1,25 @@
+[package]
+name = "scoreboard-rs"
+version = "2025.10.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.9", features = ["macros", "ws"] }
+axum-extra = { version = "0.12.6", features = ["typed-header"] }
+clap = { version = "4.6.1", features = ["derive"] }
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
+futures-util = "0.3.32"
+headers = "0.4.1"
+log = "0.4.29"
+log4rs = { version = "1.4.0", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+serde_yaml_ng = "0.10.0"
+tokio-stream = "0.1.18"
+tungstenite = "0.29.0"
+uuid = { version = "1.23.1", features = ["v4"] }
+tokio = { version = "1.52.1", features = ["full", "io-uring"] }
+tokio-tungstenite = "0.29.0"
+tower = "0.5.3"
+tower-http = { version = "0.6.8", features = ["full"] }
+thiserror = "2.0.18"

@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Operator | Roller Derby ScoreBoard</title>
+
+    <script type="text/javascript" src="/external/jquery/jquery.js"></script>
+    <script type="text/javascript" src="/external/gamepad/gamepad.js"></script>
+    <script type="text/javascript" src="/javascript/keycontrols.js"></script>
+    <script type="text/javascript" src="/json/core.js"></script>
+  </head>
+
+  <body>
+    <div id="tabsDiv" sbContext="ScoreBoard.Game([game])">
+      <div id="helpLink">
+        <a href="https://github.com/rollerderby/scoreboard/wiki/Scoreboard-Operation" target="_blank">Operator help</a>
+        (<a href="/documentation/wiki-snapshot.html#Scoreboard-Operation" target="_blank">Offline version</a>)
+      </div>
+      <div id="operatorIdDiv">Operator: <a id="operatorId"></a></div>
+      <a id="sbIndexLink" href="/">Back to index page</a>
+      <div class="GameAdvance" sbInclude="/components/game-advance/"></div>
+      <ul id="tabBar">
+        <li><a href="#ControlsTab">Controls</a></li>
+        <li><a href="#TeamsTab">Teams</a></li>
+        <li><a href="#RulesetsTab">Rules</a></li>
+        <li><a href="#IgrfTab">IGRF</a></li>
+        <li><a href="#SettingsTab">Settings</a></li>
+        <li id="capsLockWarning" class="sbHide">Caps Lock Is On</li>
+        <button id="logoutButton" sbCall="Logout">Change Operator</button>
+      </ul>
+      <div id="ControlsTab" class="TabContent" sbInclude="/components/sbo-input/" sbSheetStyle="operator"></div>
+      <div id="TeamsTab" class="TabContent">
+        <div class="sbSegmentGroup">
+          <div sbForeach="Team: 1,2: only" sbInclude="/components/team-editor/"></div>
+        </div>
+      </div>
+      <div id="RulesetsTab" class="TabContent" sbInclude="/components/ruleset-tab/"></div>
+      <div id="IgrfTab" class="TabContent" sbInclude="/components/igrf-tab/"></div>
+      <div id="SettingsTab" class="TabContent" sbInclude="/components/settings-tab/"></div>
+    </div>
+
+    <div class="sbTemplates">
+      <div id="loginDialog" class="sbSegment">
+        <div class="sbGroup">This login is used to store your settings and keybindings on this copy of CRG.</div>
+        <div class="sbGroup">
+          <span>Known Operator: </span>
+          <select sbContext="ScoreBoard.Settings">
+            <option
+              sbForeach="Setting:: name: part=3, filter=ScoreBoard.Operator, noId"
+              sbAttr="value:: toOperatorName"
+              sbDisplay=": toOperatorName"
+            ></option>
+          </select>
+        </div>
+        <div class="sbGroup">
+          <span>New Operator: <input type="text" sbOn="keyup: loginOnEnter" /></span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

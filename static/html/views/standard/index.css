@@ -1,0 +1,144 @@
+body { color: #FFFFFF; font-weight: bold; background: #000000; height: 100%; width: 100%; margin: 0; padding: 0; user-select: none; } 
+
+/* Alternative View handling */
+.DisplayPane { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; transition: opacity 1s; } 
+.DisplayPane>.object { width: 100%;height: 100%; border: 0px; object-fit: contain; }
+.DisplayPane.Show { opacity: 1; }
+#cover { background: #000; transition-delay: 1s; transition-timing-function: ease-in;}
+
+/* Colors, Shapes, Contents */
+div { text-align: center; overflow: hidden; }
+a { display: inline-block; }
+
+
+.Box { box-shadow: inset -0.03em -0.05em 0.15em rgba(0,0,0,0.5); color: #000000; background: linear-gradient(to bottom, #FFFFFF, #A0A0A0); border-radius: 15px; }
+body.box_flat .Box.FlatBottom { border-bottom-left-radius: 0px; border-bottom-right-radius: 0px; }
+body.box_flat .Box.FlatTop { border-top-left-radius: 0px; border-top-right-radius: 0px; }
+body.box_flat .Box { background: linear-gradient(to bottom, #EFEFEF, #D4D4D4); box-shadow: none; border-radius: 5px; }
+body.bright .Box { background: #FFFFFF; }
+
+.Box.Red.Red { background: linear-gradient(to bottom, #D02020, #802020); color: #FFFFFF; } 
+body.bright .Box.Red { background: #A02020; } 
+
+body.box_flat .Box.FlatDark, .Team>.JamScore.NoInitial:not(.Overtime) { color: #FFFFFF; background: linear-gradient(to bottom, #595959, #474747); }
+
+.Team>.Jammer.HasLead>.Name { color: #FF0000; animation: HasLead 1s infinite steps(6); } 
+@keyframes HasLead { 
+  0% { color: #FF0000; } 50% { color: #FFFFFF; } 100% { color: #FF0000; } 
+} 
+
+body.HideLineups .Team>.Jammer.ShowInBetweenJams:not(.HasClock)>.Name, body.HideLineups:not(.PenaltyClocks) .Team>.Jammer.ShowInBetweenJams>.Name { visibility: hidden; }
+
+.Dot { border-radius: 100%; background: #000000; } 
+.Dot.Current { background: #000000; opacity: 0; animation: DotActive 0.75s infinite steps(6); } 
+.Dot.Used { opacity: 0; } 
+@keyframes DotActive { 
+  0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } 
+} 
+
+
+/* Placement */
+.Clock { transition: all 0.25s; }
+.Clock.Show { transition-delay: 0.25s;}
+
+.Team>.Name { position: absolute; top: 0%; width: 38%; overflow: none; border-radius: 5px; } 
+.Team.Left>.Name { left: 1%; } 
+.Team.Right>.Name { right: 1%; } 
+.Team:not(.HasName)>.Name { opacity: 0; } 
+.Team:not(.HasLogo)>.Logo, .Team.HideLogos>.Logo { opacity: 0; } 
+.Team.HasName>.Name { height: 30%; font-size: 33vh; } 
+.Team.HasName.HasLogo:not(.HideLogos)>.Name { height: 10%; font-size: 10vh; } 
+
+.Team>.Logo { position: absolute; top: 0%; width: 38%; background-repeat: no-repeat; background-position: center; background-size: contain; } 
+.Team.Left>.Logo { left: 1%; } 
+.Team.Right>.Logo { right: 1%; } 
+.Team.HasName.HasLogo:not(.HideLogos)>.Logo { top: 10%; height: 20%; } 
+.Team.HasLogo:not(.HideLogos)>.Logo { top: 0%;height: 30%; } 
+
+.Team>.Penalties { position: absolute; top: 1%; width: 10%; height: 30%; display: flex; flex-flow: column-reverse nowrap; gap: 4%; }
+.Team.Left>.Penalties { left: 39.5%; }
+.Team.Right>.Penalties { right: 39.5%; }
+.Team>.Penalties>div { width: 100%; height: 30%; font-size: 8vh; }
+.Team>.Penalties>:not(.InBox) { display: none; }
+
+.Team>.Score { position: absolute; top: 31%; width: 35%; font-size: 20vh; height: 20%; line-height: 0.8; } 
+.Team.Left>.Score { left: 4%; }
+.Team.Right>.Score { right: 4%; }
+
+.Team>.JamScore { position: absolute; width: 9%; height: 12%; top: 39%; font-size: 11vh; } 
+.Team.Left>.JamScore { left: 39.5%; } 
+.Team.Right>.JamScore { right: 39.5%; } 
+
+.Team>.StarPass { position: absolute; width: 9%; height: 8%; top: 31%; font-size: 9vh; } 
+.Team.Left>.StarPass { left: 39.5%; } 
+.Team.Right>.StarPass { right: 39.5%; } 
+
+.Team>.DotTimeouts { position: absolute; height: 14%; width: 3%; top: 31% } 
+.Team>.DotOfficialReviews { position: absolute; height: 5%; width: 3%; top: 46% } 
+.Team.Left>.DotTimeouts, .Team.Left>.DotOfficialReviews { left: 0.5%; } 
+.Team.Right>.DotTimeouts, .Team.Right>.DotOfficialReviews { right: 0.5%; } 
+.Team>.DotTimeouts .Dot { position: absolute; width: 60%; height: 22%; left: 20%; } 
+.Team>.DotTimeouts .Timeout1 { top: 10%; } 
+.Team>.DotTimeouts .Timeout2 { top: 40%; } 
+.Team>.DotTimeouts .Timeout3 { top: 70%; } 
+.Team>.DotOfficialReviews .Dot { position: absolute; width: 60%; height: 60%; left: 20%; top: 20%; } 
+
+.Team>.DotOfficialReviews .Dot.OfficialReview1.Retained { border-radius: 20%; width: 24%; left: 38%; }
+.Team>.DotOfficialReviews .Dot.OfficialReviewHelper.Retained { border-radius: 20%; height: 24%; top: 38%; }
+.Team>.DotOfficialReviews .Dot.OfficialReviewHelper:not(.Retained) { display: none; }
+
+.Team>.Jammer { position: absolute; top: 52%; left: auto; right: auto; width: 40%; height: 13%; }
+.Team.Left>.Jammer { left: -40%; } 
+.Team.Left>.Jammer:not(.Hidden).Show { left: 5%; } 
+.Team.Right>.Jammer { right: -40%; } 
+.Team.Right>.Jammer:not(.Hidden).Show { right: 5%; }
+.Team>.Jammer>.Name { position: absolute; top: 0%; width: 100%; height: 100%; }
+.PenaltyClocks .Team>.Jammer.HasClock>.Name { width: 65%; }
+.Team>.Jammer>.PenaltyTime { position: absolute; top: 0%; width: 30%; height: 90%; }
+.Team.Left>.Jammer>.Name { left: 0%; }
+.Team.Left>.Jammer>.PenaltyTime { left: -100%; }
+.PenaltyClocks .Team.Left>.Jammer.HasClock>.PenaltyTime { left: 70%; }
+.Team.Right>.Jammer>.Name { right: 0%; }
+.Team.Right>.Jammer>.PenaltyTime { right: -100%; }
+.PenaltyClocks .Team.Right>.Jammer.HasClock>.PenaltyTime { right: 70%; }
+.Team>.Jammer.ShowInBetweenJams { height: 10%; }
+
+
+.Clock.Period.Large { position: absolute; top: 65%; left: -40%; right: auto; width: 40%; height: 28%;  } 
+.Clock.Period.Large.Show { left: 5%; } 
+.Clock.Period.Large>.Name { position: absolute; top: 0%; left: 5%; width: 90%; height: 35%; } 
+.Clock.Period.Large>.Time { position: absolute; top: 40%; left: 0%; width: 100%; height: 60%; } 
+body.box_flat .Clock.Period.Large>.Name { left: 0%; width: 100%; height: 40% } 
+
+.Clock.Jam.Large { position: absolute; top: 65%; right: -40%; left: auto; width: 40%; height: 28%; } 
+.Clock.Jam.Large.Show { right: 5%; } 
+.Clock.Jam.Large>.Name { position: absolute; top: 0%; left: 5%; width: 90%; height: 35%; } 
+.Clock.Jam.Large>.Time { position: absolute; top: 40%; left: 0%; width: 100%; height: 60%; } 
+body.box_flat .Clock.Jam.Large>.Name { left: 0%; width: 100%; height: 40% } 
+
+.Clock.Small { position: absolute; top: 62%; height: 12%; opacity: 0; }
+.Clock.Small.Below { top: 75%; } 
+.Clock.Small.Show { opacity: 1; } 
+.Clock.Period.Time.Small { left: 1%; width: 27%; line-height: 0.8; } 
+.Clock.Period.NameNumber.Small { left: 29%; width: 12%; } 
+.Clock.Jam.NameNumber.Small { left: 42%; width: 16%; } 
+.Clock.Description.Small { right: 29%; width: 12%; } 
+.Clock.Lineup.Small,.Clock.Timeout.Small { right: 1%; width: 27%; line-height: 0.8; } 
+.Clock.None.Small { right: 1%; width: 57%; } 
+
+.Clock.Intermission { position: absolute; left: 20%; width: 60%; height: 35%; top: 100%; } 
+.Clock.Intermission.Show { top: 60%; } 
+.Clock.Intermission .Message { position: absolute; top: 0%; height: 35%; left: 0%; width: 100%; font-size: 11vh; line-height: 0.8; } 
+.Clock.Intermission .Time { position: absolute; top: 40%; height: 60%; left: 0%; width: 100%; font-size: 21vh; line-height: 0.8; } 
+.Clock.Intermission .Time.Hidden { opacity: 0; } 
+
+
+#SponsorBox { position: absolute; left: 0%; top: 100%; width: 100%; height: 25%; transition: top 500ms; }
+#SponsorBox.Show { top: 75%; }
+#SponsorBox>div { position: absolute; top: 0%; right: 0%; width: 100%; height: 100%; font-size: 0px; transition: right 1s; } 
+#SponsorBox>div.NextImg { right: 100%; } 
+#SponsorBox>div.NextImg>img { display: none; }
+#SponsorBox>div.CurrentImg { right: 0%; transition-delay: 20ms; }
+#SponsorBox>div.FinishedImg { right: -100%; } 
+#SponsorBox>div>img { width: 100%; height: 100%; } 
+#SponsorBox>div>[src=""] { display: none; }

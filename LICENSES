@@ -1,0 +1,63 @@
+Copyright (C) 2008-2012 Mr Temper <MrTemper@CarolinaRollergirls.com>
+Copyright (C) 2012-2025 The CRG developers
+
+This file is part of the CRG ScoreBoard.
+The CRG ScoreBoard is licensed under either the GNU General Public
+License version 3 (or later), or the Apache License 2.0, at your option.
+See the file COPYING for details.
+
+
+Additionally, this scoreboard bundles/uses other software packages which
+have their own licenses, as listed below.  Please see each package's
+website for details on their license and terms.
+
+
+Packages using the Apache License 2.0 which can be found in COPYING-AL
+
+Apache POI (poi-*.jar, xmlbeans-3.1.0.jar)
+https://poi.apache.org
+
+Commons Collections (commons-collections4-*.jar)
+https://commons.apache.org/proper/commons-collections/
+
+Commons Compress (commons-compress-*.jar)
+https://commons.apache.org/proper/commons-compress/
+
+Commons Fileupload (commons-fileupload-*.jar)
+https://commons.apache.org/proper/commons-fileupload/
+
+Commons IO (commons-io-*.jar)
+https://commons.apache.org/proper/commons-io/
+
+Commons Math (commons-math3-*.jar)
+https://commons.apache.org/proper/commons-math/
+
+Commons Lang (commons-lang3-*.jar)
+https://commons.apache.org/proper/commons-lang/
+
+Jackson (jackson-*.jar)
+https://github.com/FasterXML/jackson
+
+Jetty (jetty-*.jar, servlet-api-*.jar, websocket-*.jar)
+https://www.eclipse.org/jetty/
+
+Prometheus Java Simpleclient (simpleclient-*.jar)
+https://github.com/prometheus/client_java
+
+
+
+
+Packages using the Eclipse Public License 1.0 available at
+https://www.eclipse.org/legal/epl-v10.html
+
+JUnit test library (junit-4.*.jar)
+https://junit.org
+
+
+
+
+Packages using the BSD License 3 available at
+https://opensource.org/licenses/BSD-3-Clause
+
+Hamcrest (hamcrest-*.jar)
+https://hamcrest.org/JavaHamcrest/

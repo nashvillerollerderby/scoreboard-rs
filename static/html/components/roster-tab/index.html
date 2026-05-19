@@ -1,0 +1,105 @@
+<div id="RosterTab" sbContext="ScoreBoard.CurrentGame">
+  <div class="sbSegmentGroup">
+    <div sbForeach="Team: 1,2: only" class="sbSegment">
+      <div class="sbGroup sbHeader Name">
+        <span sbDisplay="Name"></span>
+      </div>
+      <div class="sbGroup League">
+        <img class="Logo" sbAttr="src: Logo" sbClass="sbHide: Logo: sbIsEmpty" />
+        <div class="sbStack">
+          <table class="Names">
+            <tr class="League">
+              <td class="Label">League:</td>
+              <td class="Value" sbDisplay="LeagueName"></td>
+            </tr>
+            <tr class="LTeam">
+              <td class="Label">Team:</td>
+              <td class="Value" sbDisplay="TeamName"></td>
+            </tr>
+            <tr class="Color">
+              <td class="Label">Uniform Color:</td>
+              <td class="Value" sbDisplay="UniformColor"></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <table class="sbGroup Skaters">
+        <col class="RosterNumber" />
+        <col class="Name" />
+        <col class="Pronouns" />
+        <col class="Flags" />
+        <thead class="sbHeader">
+          <tr>
+            <th></th>
+            <th class="Title">Skaters</th>
+            <th></th>
+            <th id="skaterCount" />
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="Skater"
+            sbForeach="Skater:: rosterNumber: resort=RosterNumber"
+            sbAttr="flag: Flags: rstUpdateSkaterCount | role: Role | rosterNumber: RosterNumber"
+          >
+            <td class="RosterNumber" sbDisplay="RosterNumber" />
+            <td class="Name" sbDisplay="Name" />
+            <td class="Pronouns" sbDisplay="Pronouns" />
+            <td class="Flags" sbDisplay="Flags,Role: rstToPositionDisplay"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="sbSegmentGroup">
+    <div class="sbSegment">
+      <table class="sbGroup Officials">
+        <col class="Position" />
+        <col class="Name" />
+        <col class="League" />
+        <thead>
+          <tr class="sbHeader">
+            <th colspan="3">Non-Skating Officials</th>
+          </tr>
+          <tr class="sbSubHeader">
+            <th class="Position">Position</th>
+            <th class="Name">Name</th>
+            <th class="League">League</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr sbForeach="Nso">
+            <td class="Position" sbDisplay="Role"></td>
+            <td class="Name" sbDisplay="Name"></td>
+            <td class="League" sbDisplay="League"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sbSegment">
+      <table class="sbGroup Officials">
+        <col class="Position" />
+        <col class="Name" />
+        <col class="League" />
+        <thead>
+          <tr class="sbHeader">
+            <th colspan="3">Skating Officials</th>
+          </tr>
+          <tr class="sbSubHeader">
+            <th class="Position">Position</th>
+            <th class="Name">Name</th>
+            <th class="League">League</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr sbForeach="Ref">
+            <td class="Position" sbDisplay="Role"></td>
+            <td class="Name" sbDisplay="Name"></td>
+            <td class="League" sbDisplay="League"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
