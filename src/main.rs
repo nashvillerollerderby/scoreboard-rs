@@ -1,45 +1,50 @@
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::sync::{Arc};
-use axum::response::IntoResponse;
-use tokio::sync::Mutex;
 use axum::Router;
+use axum::response::IntoResponse;
 use axum::routing::{any, get};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
-use uuid::Uuid;
 
-mod static_files;
-mod logging;
 mod error;
+mod logging;
+mod static_files;
 mod ws;
 
 use error::Result;
-use crate::static_files::handle_directories_with_router;
-use crate::ws::{ws_handler, Connection, Connections};
+use static_files::handle_directories_with_router;
+use ws::{Connections, ws_handler};
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    /// Show the GUI
     #[arg(long, short, default_value_t = false)]
     pub gui: bool,
 
+    /// Port on which to bind the web server
     #[arg(long, short, default_value_t = 8000)]
     pub port: i32,
 
+    /// Host address on which to bind the web server
     #[arg(long, default_value = "0.0.0.0")]
     pub host: String,
 
+    /// Path for files to import
     #[arg(long, short)]
     pub import: Option<String>,
 
+    /// Enable metrics
     #[arg(long, short, default_value_t = false)]
     pub metrics: bool,
 
+    /// The frequency in seconds that the autosave is triggered
     #[arg(long)]
     pub autosave_frequency_s: Option<u32>,
 }
@@ -72,6 +77,7 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
+    // TODO load version information p1
     // TODO initialize JSON State manager p1
     // TODO initialize JSON listener p1
 
@@ -106,7 +112,7 @@ async fn main() -> Result<()> {
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-        .with_graceful_shutdown(shutdown(app_state))
-        .await?;
+    // .with_graceful_shutdown(shutdown(app_state))
+    .await?;
     Ok(())
 }

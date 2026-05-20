@@ -18,8 +18,10 @@ serde_yaml_ng = "0.10.0"
 tokio-stream = "0.1.18"
 tungstenite = "0.29.0"
 uuid = { version = "1.23.1", features = ["v4"] }
-tokio = { version = "1.52.1", features = ["full", "io-uring"] }
+tokio = { version = "1.52.1", features = ["full"] }
 tokio-tungstenite = "0.29.0"
 tower = "0.5.3"
 tower-http = { version = "0.6.8", features = ["full"] }
 thiserror = "2.0.18"
+regex = "1.12.3"
+string-interner = "0.20.0"
