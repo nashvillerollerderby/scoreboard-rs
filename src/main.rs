@@ -16,7 +16,7 @@ mod error;
 mod logging;
 mod static_files;
 mod ws;
-mod trie;
+mod state;
 
 use error::Result;
 use static_files::handle_directories_with_router;

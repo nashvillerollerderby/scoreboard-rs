@@ -210,7 +210,8 @@ impl StateTrie {
         }
     }
 
-    pub fn filter(&self, filter: PathTrie, filter_secrets: bool) -> HashMap<String, Value> {
-        filter.intersect(self, filter_secrets)
-    }
+    // TODO awaits PathTrie
+    // pub fn filter(&self, filter: PathTrie, filter_secrets: bool) -> HashMap<String, Value> {
+    //     filter.intersect(self, filter_secrets)
+    // }
 }
