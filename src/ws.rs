@@ -53,16 +53,16 @@ pub enum SocketMessageSend {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SocketMessageRecv {
+    // TODO Ping should not be here, it is managed by WS itself
+    Ping {},
+    Register {
+        paths: Vec<String>,
+    },
     Set {
         key: String,
         value: Value,
         flag: String,
     },
-    Register {
-        paths: Vec<String>,
-    },
-    // TODO Ping should not be here, it is managed by WS itself
-    Ping {},
 }
 
 impl TryFrom<Utf8Bytes> for SocketMessageRecv {
