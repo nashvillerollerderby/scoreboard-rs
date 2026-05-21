@@ -25,3 +25,5 @@ tower-http = { version = "0.6.8", features = ["full"] }
 thiserror = "2.0.18"
 regex = "1.12.3"
 string-interner = "0.20.0"
+chumsky = { version = "0.13.0", features = ["serde"] }
+test-case = "3.3.1"
