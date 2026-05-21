@@ -80,7 +80,7 @@ impl StateTrie {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.is_path && self.subtries.is_empty()
+        !self.is_path && self.subtries.is_empty()
     }
 
     pub fn size(&self) -> i64 {
