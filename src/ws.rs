@@ -46,9 +46,29 @@ impl Connection {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum SocketMessageSend {
     Updates(HashMap<String, Value>),
+    Pong,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct GameData {
+    Team1: u64,
+    Team2: u64,
+    Ruleset: u64,
+    IntermissionClock: i64,
+    Advance: bool,
+    TO1: u8,
+    TO2: u8,
+    OR1: u8,
+    OR2: u8,
+    Points1: u32,
+    Points2: u32,
+    Period: u8,
+    Jam: u8,
+    PeriodClock: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -62,6 +82,9 @@ pub enum SocketMessageRecv {
         key: String,
         value: Value,
         flag: String,
+    },
+    StartNewGame {
+        data: GameData,
     },
 }
 
@@ -95,7 +118,7 @@ pub(crate) async fn ws_handler(
 
 async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc<ScoreboardState>) {
     if socket
-        .send(Message::Ping(axum::body::Bytes::from_static(&[1, 2, 3])))
+        .send(Message::Ping(axum::body::Bytes::copy_from_slice(b"")))
         .await
         .is_ok()
     {
@@ -146,10 +169,15 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
             if let Ok(message) = rx.try_recv() {
                 log::debug!("Sending message to socket client");
                 let message = match message {
-                    SocketMessageSend::Updates(map) => serde_json::to_string(&map).unwrap(),
+                    SocketMessageSend::Updates(map) => {
+                        string_message(serde_json::to_string(&map).unwrap())
+                    }
+                    SocketMessageSend::Pong => {
+                        Message::Pong(axum::body::Bytes::copy_from_slice(b""))
+                    }
                 };
 
-                match sender.send(string_message(message)).await {
+                match sender.send(message).await {
                     Ok(_) => {}
                     Err(e) => {
                         log::error!(
@@ -182,7 +210,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                         SocketMessageRecv::Register { paths } => {
                             log::debug!("Register paths {:?}", paths);
                             let mut connections = recv_connections.lock().await;
-                            let mut connection = connections.get_mut(&recv_uuid).unwrap();
+                            let connection = connections.get_mut(&recv_uuid).unwrap();
                             for path in paths {
                                 connection.registered_for.insert(path);
                             }
@@ -195,7 +223,8 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                                 flag
                             );
                         }
-                        SocketMessageRecv::Ping {} => log::debug!("Ping"),
+                        SocketMessageRecv::Ping {} => log::debug!("-> Ping"),
+                        SocketMessageRecv::StartNewGame { data } => log::debug!("{:?}", data),
                     },
                     Err(e) => {
                         log::error!(
@@ -206,8 +235,15 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                     }
                 },
                 Message::Binary(_bytes) => log::debug!("<- Binary"),
-                Message::Ping(_bytes) => log::debug!("<- Ping"),
-                Message::Pong(_bytes) => log::debug!("<- Pong"),
+                Message::Ping(msg) => {
+                    log::debug!("Received ping {:?}", msg);
+                    let mut connections = recv_connections.lock().await;
+                    let connection = connections.get_mut(&recv_uuid).unwrap();
+                    if connection.sender.send(SocketMessageSend::Pong).is_err() {
+                        log::error!("")
+                    }
+                }
+                Message::Pong(msg) => log::debug!("<- Pong: {:?}", msg),
                 Message::Close(_close_frame) => {
                     let mut connections = recv_connections.lock().await;
                     connections
