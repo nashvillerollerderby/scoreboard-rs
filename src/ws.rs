@@ -53,16 +53,24 @@ pub enum SocketMessageSend {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum SocketMessageRecv {
-    Register { paths: Vec<String> },
+    Set {
+        key: String,
+        value: Value,
+        flag: String,
+    },
+    Register {
+        paths: Vec<String>,
+    },
+    // TODO Ping should not be here, it is managed by WS itself
     Ping {},
-    Pong(String),
 }
 
-impl TryFrom<Message> for SocketMessageRecv {
+impl TryFrom<Utf8Bytes> for SocketMessageRecv {
     type Error = crate::error::Error;
 
-    fn try_from(value: Message) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_str(value.to_text()?)?)
+    fn try_from(msg: Utf8Bytes) -> Result<Self, Self::Error> {
+        log::debug!("Message received: {}", &msg);
+        Ok(serde_json::from_str(&msg)?)
     }
 }
 
@@ -168,26 +176,44 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                 recv_uuid,
                 msg.to_text().unwrap()
             );
-            match SocketMessageRecv::try_from(msg.clone()) {
-                Ok(msg) => match msg {
-                    SocketMessageRecv::Register { paths } => {
-                        log::debug!("Register paths {:?}", paths);
-                        let mut connections = recv_connections.lock().await;
-                        let mut connection = connections.get_mut(&recv_uuid).unwrap();
-                        for path in paths {
-                            connection.registered_for.insert(path);
+            match msg {
+                Message::Text(msg) => match SocketMessageRecv::try_from(msg.clone()) {
+                    Ok(msg) => match msg {
+                        SocketMessageRecv::Register { paths } => {
+                            log::debug!("Register paths {:?}", paths);
+                            let mut connections = recv_connections.lock().await;
+                            let mut connection = connections.get_mut(&recv_uuid).unwrap();
+                            for path in paths {
+                                connection.registered_for.insert(path);
+                            }
                         }
-                    }
-                    msg @ _ => {
-                        log::info!("Client {}: {:?}", recv_uuid, msg);
+                        SocketMessageRecv::Set { key, value, flag } => {
+                            log::debug!(
+                                "Received Set request k: `{}` v: `{}` f: `{}`",
+                                key,
+                                value,
+                                flag
+                            );
+                        }
+                        SocketMessageRecv::Ping {} => log::debug!("Ping"),
+                    },
+                    Err(e) => {
+                        log::error!(
+                            "could not convert message to SocketMessage {}: {:?}",
+                            e,
+                            msg
+                        );
                     }
                 },
-                Err(e) => {
-                    log::error!(
-                        "could not convert message to SocketMessage {}: {:?}",
-                        e,
-                        msg
-                    );
+                Message::Binary(_bytes) => log::debug!("<- Binary"),
+                Message::Ping(_bytes) => log::debug!("<- Ping"),
+                Message::Pong(_bytes) => log::debug!("<- Pong"),
+                Message::Close(_close_frame) => {
+                    let mut connections = recv_connections.lock().await;
+                    connections
+                        .remove_entry(&recv_uuid)
+                        .expect("The client has to be registered in the connections");
+                    log::info!("Unregistered client {}", recv_uuid);
                 }
             }
         }
