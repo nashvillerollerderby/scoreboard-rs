@@ -87,6 +87,10 @@ async fn main() -> Result<()> {
     let app_state = Arc::new(ScoreboardState::new());
 
     // TODO load version information p1
+    let json_state_manager = Arc::new(Mutex::new(JSONStateManager::new(
+        app_state.connections.clone(),
+    )));
+    // TODO initialize JSON listener p1
 
     if args.metrics {
         // TODO initialize metrics p3
