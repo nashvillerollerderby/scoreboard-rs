@@ -23,6 +23,10 @@ use error::Result;
 use static_files::handle_directories_with_router;
 use ws::{Connections, ws_handler};
 
+pub const PENALTIES_RDCL: &str = include_str!("../config/penalties/RDCL.json");
+pub const PENALTIES_WFTDA_2016: &str = include_str!("../config/penalties/wftda2016.json");
+pub const PENALTIES_WFTDA_2018: &str = include_str!("../config/penalties/wftda2018.json");
+
 #[derive(Parser, Debug, Serialize, Deserialize)]
 #[command(version, about, long_about = None)]
 pub struct Args {
@@ -96,6 +100,9 @@ async fn main() -> Result<()> {
         .route("/urls", get(urls));
 
     // Set up static serve directory for webserver
+    #[cfg(target_os = "windows")]
+    let dir = r#"static\html"#.to_string();
+    #[cfg(not(target_os = "windows"))]
     let dir = "static/html".to_string();
     let serve_dir = ServeDir::new(dir.clone());
     let files_router = handle_directories_with_router(&dir).fallback_service(serve_dir);
