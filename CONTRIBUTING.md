@@ -26,6 +26,10 @@ owners should be able to answer any questions you have. Asking and answering que
 posterity of understanding for the codebase and also help folks become better reviewers, so please ask as many questions
 as you need!
 
+If you aren't sure how to perform a code review, read through
+Bevy's [Reviewing Pull Requests](https://bevy.org/learn/contribute/helping-out/reviewing-pull-requests/) documentation.
+Their guidelines are the general framework we are using for contributing to this repository.
+
 > _Note: While the project is in its earliest stages, and contributors/reviewers are few, only **one** approving review
 > will be required for a maintainer to look at a PR and review+merge it._
 
