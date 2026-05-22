@@ -1,6 +1,6 @@
 use lazy_static;
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 lazy_static::lazy_static! {
     static ref FIND_DEL: Regex = {
@@ -23,16 +23,25 @@ struct PathTrieChildren {
 impl PathTrie {
     // When we add, we split by `.` and `(`.
     // We add the pieces as children.
+    // Note that * has a different meaning inside and outside the parenthesis:
+    // the idea is that within an identifier, * counts as a character,
+    // while within the `()` it means - in case it is at the end of a String,
+    // that we allow everything that comes after.
     pub fn add(&mut self, entry: &str) {
         let mut rem = entry;
         let mut node = &mut self.root;
         loop {
+            log::debug!("PathTrie: adding `{}` to node {:?}", rem, node);
             let found = FIND_DEL.find(rem);
             match found {
                 Some(a) => {
                     let start = rem.split_at(a.start()).0;
                     let end = rem.split_at(a.end()).1;
                     if !node.children.contains_key(start) {
+                        log::debug!(
+                            "PathTrie: found no node with key {}, creating a new one",
+                            start
+                        );
                         let new_node = PathTrieChildren::default();
                         node.children.insert(start.to_owned(), new_node);
                     }
@@ -46,6 +55,11 @@ impl PathTrie {
                     // There is nothing more we can match against. As such, we check whether the
                     // remainder is there, and we quit.
                     if !node.children.contains_key(rem) {
+                        log::debug!(
+                            "PathTrie: found no node with key {}, creating a new one",
+                            rem
+                        );
+
                         let new_node = PathTrieChildren::default();
                         node.children.insert(rem.to_owned(), new_node);
                     }
@@ -61,47 +75,72 @@ impl PathTrie {
     }
 
     pub fn covers(&self, entry: &str) -> bool {
-        let mut rem = entry;
-        let mut node = &self.root;
-        loop {
+        let mut possible_subtrees = VecDeque::from(vec![(&self.root, entry)]);
+        while let Some((node, rem)) = possible_subtrees.pop_front() {
+            log::debug!("PathTrie: searching for {} in node {:?}", rem, node);
             let found = FIND_DEL.find(rem);
             match found {
                 Some(a) => {
                     let start = rem.split_at(a.start()).0;
                     let end = rem.split_at(a.end()).1;
-                    if !node.children.contains_key(start) {
-                        eprintln!(" => `{}` not in the childrens", start);
-                        return false;
+                    // if we have "*)" in the children, we need to also add that one.
+                    let star_node = node.children.get("*)");
+                    if let Some(star_node) = star_node {
+                        log::debug!("PathTrie: found a star node");
+                        possible_subtrees.push_back((star_node, end));
                     }
-                    node = node
-                        .children
-                        .get(start)
-                        .expect("we either had already a child, or we added it");
-                    rem = end;
+                    let next_node = node.children.get(start);
+                    if let Some(next_node) = next_node {
+                        log::debug!("PathTrie: {} found", start);
+                        if next_node.is_path {
+                            return true;
+                        }
+                        possible_subtrees.push_back((next_node, end));
+                    }
                 }
                 None => {
+                    // If there is no reminder, then we quit.
+                    if rem.is_empty() {
+                        return false;
+                    }
                     // There is nothing more we can match against. As such, we check whether the
                     // remainder is there, and we quit.
                     if let Some(node) = node.children.get(rem) {
-                        return node.is_path;
+                        log::debug!("PathTrie: {} has been found", rem);
+                        if node.is_path {
+                            return true;
+                        }
                     }
-                    eprintln!(" => `{}` last level, not in children", rem);
+                    if let Some(node) = node.children.get("*)") {
+                        // if we still have children, we cannot possibly match.
+                        if !node.children.is_empty() {
+                            log::debug!("PathTrie: star remaider has children");
+                            return false;
+                        }
+                        log::debug!("PathTrie: star remainder has been found");
+                        return true;
+                    }
+                    log::debug!("PathTrie: {} has not been found", rem);
                     // if we "are" a path, then this is correct.
-                    return node.is_path;
+                    if node.is_path {
+                        return true;
+                    }
                 }
             }
         }
+        return false;
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::logging;
+
     use super::*;
 
     #[test]
     fn simple_covers() {
         let mut pt = PathTrie::default();
-
         pt.add("ScoreBoard.Period");
 
         assert!(pt.covers("ScoreBoard.Period"));
@@ -130,7 +169,7 @@ mod test {
     }
 
     #[test]
-    fn covers1() {
+    fn partial_and_fully_specified() {
         let mut pt = PathTrie::default();
         pt.add("ScoreBoard.Period(1).Jam(1).StarPass");
         pt.add("ScoreBoard.Period");
@@ -141,7 +180,7 @@ mod test {
     }
 
     #[test]
-    fn covers2() {
+    fn star_in_brackets() {
         let mut pt = PathTrie::default();
         pt.add("ScoreBoard.Period(1).Foo");
         pt.add("ScoreBoard.Period(*).Bar");
@@ -154,7 +193,7 @@ mod test {
     }
 
     #[test]
-    fn covers3() {
+    fn long_chain_does_not_allow_partial_spec() {
         let mut pt = PathTrie::default();
         pt.add("ScoreBoard.Period(*).Jam(1).Foo(*).Bar");
 
@@ -171,7 +210,7 @@ mod test {
     }
 
     #[test]
-    fn covers5() {
+    fn paths_in_parenthesis_follow_the_rules() {
         let mut pt = PathTrie::default();
         pt.add("ScoreBoard.Rulesets.Rule(Period.Duration)");
         pt.add("ScoreBoard.Rulesets.Rule(Jam.*)");
