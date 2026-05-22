@@ -52,7 +52,6 @@ pub struct Args {
 }
 
 pub struct ScoreboardState {
-    pub state: Arc<Mutex<HashMap<String, Value>>>,
     pub connections: Arc<Mutex<Connections>>,
     pub state_manager: Arc<Mutex<JSONStateManager>>,
 }
@@ -61,7 +60,6 @@ impl ScoreboardState {
     pub fn new() -> Self {
         let connections = Arc::new(Mutex::new(Connections::default()));
         ScoreboardState {
-            state: Default::default(),
             connections: connections.clone(),
             state_manager: Arc::new(Mutex::new(JSONStateManager::new(connections))),
         }
@@ -73,7 +71,7 @@ pub async fn urls() -> impl IntoResponse {
 }
 
 async fn shutdown(app_state: Arc<ScoreboardState>) {
-    // TODO run autosave p1
+    // TODO run autosave p2
 }
 
 #[tokio::main]
@@ -85,11 +83,6 @@ async fn main() -> Result<()> {
     let app_state = Arc::new(ScoreboardState::new());
 
     // TODO load version information p1
-    // TODO initialize JSON State manager p1
-    let json_state_manager = Arc::new(Mutex::new(JSONStateManager::new(
-        app_state.connections.clone(),
-    )));
-    // TODO initialize JSON listener p1
 
     if args.metrics {
         // TODO initialize metrics p3

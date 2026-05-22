@@ -135,27 +135,18 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
     let uuid = Uuid::new_v4();
     let (tx, rx) = channel::unbounded::<SocketMessageSend>();
     {
+        let mut connection = Connection::new(tx);
+        shared_state
+            .state_manager
+            .lock()
+            .await
+            .register(&mut connection)
+            .await;
         shared_state
             .connections
             .lock()
             .await
-            .insert(uuid.clone(), Connection::new(tx));
-    }
-
-    {
-        log::info!("Sending new subscriber message to client {}", uuid);
-        let state = shared_state.state.lock().await;
-        socket
-            .send(string_message(
-                serde_json::to_string(&json!({
-                    "state": *state,
-                }))
-                .unwrap(),
-            ))
-            .await
-            .expect("Unable to send new subscriber message");
-        log::info!("New subscriber message: {:?}", state);
-        log::info!("New subscriber message sent to client {}", uuid);
+            .insert(uuid.clone(), connection);
     }
 
     let recv_connections = shared_state.connections.clone();

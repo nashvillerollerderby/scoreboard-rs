@@ -39,7 +39,9 @@ impl PathTrie {
         state_trie: &StateTrie,
         filter_secrets: bool,
     ) -> HashMap<String, Value> {
-        todo!()
+        let mut results = HashMap::new();
+        self.intersect_inner(state_trie, &mut results, "".to_string(), filter_secrets);
+        results
     }
 
     fn intersect_inner(

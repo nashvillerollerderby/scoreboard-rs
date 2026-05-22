@@ -25,7 +25,7 @@ impl StateTrie {
             is_path: false,
             value: None,
             subtries: HashMap::new(),
-            regex_0: Regex::new("(?=[.(])").unwrap(),
+            regex_0: Regex::new(r"[\.\(]").unwrap(),
         }
     }
 
@@ -35,7 +35,7 @@ impl StateTrie {
             is_path: false,
             value: None,
             subtries: HashMap::new(),
-            regex_0: Regex::new("(?=[.(])").unwrap(),
+            regex_0: Regex::new(r"[\.\(]").unwrap(),
         }
     }
 
