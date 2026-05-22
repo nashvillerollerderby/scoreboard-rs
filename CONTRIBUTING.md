@@ -23,6 +23,9 @@ owners should be able to answer any questions you have. Asking and answering que
 posterity of understanding for the codebase and also help folks become better reviewers, so please ask as many questions
 as you need!
 
+> _Note: While the project is in its earliest stages, and contributors/reviewers are few, only **one** approving review
+> will be required for a maintainer to look at a PR and review+merge it._
+
 # LLM and Generative AI Policy
 
 ### LLM and Generative AI Features
