@@ -9,6 +9,23 @@ lazy_static::lazy_static! {
     };
 }
 
+const STAR_DELIMITER: &str = "*)";
+
+/// *Please* refers to the test cases to understand what this DS allows and
+/// the special cases.
+/// In general, we allow to "register" patterns using the "add" function,
+/// and to verify if some other pattern is "covered" (using - "covers")
+///
+/// # Example
+/// ```
+/// # use scoreboard_rs::path_trie::PathTrie;
+/// let mut pt = PathTrie::default();
+/// pt.add("ScoreBoard.Period(*).Bar");
+///
+/// assert!(pt.covers("ScoreBoard.Period(1).Bar"));
+/// assert!(!pt.covers("ScoreBoard.Period"));
+/// assert!(!pt.covers("ScoreBoard.Period(2).Baz"));
+/// ```
 #[derive(Default, Debug)]
 pub struct PathTrie {
     root: PathTrieChildren,
@@ -63,7 +80,7 @@ impl PathTrie {
                         let new_node = PathTrieChildren::default();
                         node.children.insert(rem.to_owned(), new_node);
                     }
-                    let mut node = node
+                    let node = node
                         .children
                         .get_mut(rem)
                         .expect("we either had already a child, or we added it");
@@ -84,7 +101,7 @@ impl PathTrie {
                     let start = rem.split_at(a.start()).0;
                     let end = rem.split_at(a.end()).1;
                     // if we have "*)" in the children, we need to also add that one.
-                    let star_node = node.children.get("*)");
+                    let star_node = node.children.get(STAR_DELIMITER);
                     if let Some(star_node) = star_node {
                         log::debug!("PathTrie: found a star node");
                         possible_subtrees.push_back((star_node, end));
@@ -111,7 +128,7 @@ impl PathTrie {
                             return true;
                         }
                     }
-                    if let Some(node) = node.children.get("*)") {
+                    if let Some(node) = node.children.get(STAR_DELIMITER) {
                         // if we still have children, we cannot possibly match.
                         if !node.children.is_empty() {
                             log::debug!("PathTrie: star remaider has children");
@@ -134,8 +151,6 @@ impl PathTrie {
 
 #[cfg(test)]
 mod test {
-    use crate::logging;
-
     use super::*;
 
     #[test]
