@@ -16,12 +16,17 @@ mod error;
 mod logging;
 pub(crate) mod state;
 mod static_files;
+mod util;
 mod ws;
 
 use crate::state::JSONStateManager;
 use error::Result;
 use static_files::handle_directories_with_router;
 use ws::{Connections, ws_handler};
+
+pub type Version = HashMap<String, Option<Value>>;
+
+pub const RELEASE: &str = include_str!("../release.json");
 
 pub const PENALTIES_RDCL: &str = include_str!("../config/penalties/RDCL.json");
 pub const PENALTIES_WFTDA_2016: &str = include_str!("../config/penalties/wftda2016.json");
@@ -55,15 +60,15 @@ pub struct Args {
     pub autosave_frequency_s: Option<u32>,
 }
 
-pub struct ScoreboardState {
+pub struct ScoreBoardState {
     pub connections: Arc<Mutex<Connections>>,
     pub state_manager: Arc<Mutex<JSONStateManager>>,
 }
 
-impl ScoreboardState {
+impl ScoreBoardState {
     pub fn new() -> Self {
         let connections = Arc::new(Mutex::new(Connections::default()));
-        ScoreboardState {
+        ScoreBoardState {
             connections: connections.clone(),
             state_manager: Arc::new(Mutex::new(JSONStateManager::new(connections))),
         }
@@ -74,7 +79,7 @@ pub async fn urls() -> impl IntoResponse {
     "0.0.0.0:8000\nlocalhost:8000"
 }
 
-async fn shutdown(app_state: Arc<ScoreboardState>) {
+async fn shutdown(app_state: Arc<ScoreBoardState>) {
     // TODO run autosave p2
 }
 
@@ -84,12 +89,14 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
-    let app_state = Arc::new(ScoreboardState::new());
+    let app_state = Arc::new(ScoreBoardState::new());
 
-    // TODO load version information p1
-    let json_state_manager = Arc::new(Mutex::new(JSONStateManager::new(
-        app_state.connections.clone(),
-    )));
+    // load version information
+    {
+        let json = serde_json::from_str::<Version>(RELEASE)?;
+        let mut state_manager = app_state.state_manager.lock().await;
+        state_manager.state.add_all(json);
+    }
     // TODO initialize JSON listener p1
 
     if args.metrics {
