@@ -1,46 +1,48 @@
 use crate::ScoreboardState;
+use crate::state::{JSONStateListener, PathTrie, StateTrie};
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use crossbeam::channel;
 use futures_util::{SinkExt, StreamExt};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
 use std::net::SocketAddr;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use uuid::Uuid;
-
-pub struct StateTrie {
-    changes: HashMap<String, Value>,
-}
-
-pub trait JSONStateUpdate {
-    async fn handle_updates(&self, state: StateTrie);
-}
 
 pub type Connections = HashMap<Uuid, Connection>;
 
-impl JSONStateUpdate for Connections {
-    async fn handle_updates(&self, _state_trie: StateTrie) {
-        for (_, connection) in self {
-            // connection.send_registered_changes(&state_trie);
+impl JSONStateListener for Connection {
+    async fn send_updates(&mut self, state: &StateTrie, changes: &StateTrie) {
+        self.state = state.clone();
+        let updates = self.paths.intersect(changes, true);
+        if updates.len() == 0 {
+            return;
+        }
+        match self.sender.send(SocketMessageSend::Updates(updates)) {
+            Ok(_) => {}
+            Err(e) => {
+                log::error!("{e}");
+            }
         }
     }
 }
 
+#[derive(Clone)]
 pub struct Connection {
     pub sender: channel::Sender<SocketMessageSend>,
-    pub registered_for: HashSet<String>,
+    pub paths: PathTrie,
+    pub state: StateTrie,
 }
 
 impl Connection {
     pub fn new(sender: channel::Sender<SocketMessageSend>) -> Self {
         Connection {
-            registered_for: Default::default(),
+            state: StateTrie::empty(),
+            paths: PathTrie::empty(),
             sender,
         }
     }
@@ -212,7 +214,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                             let mut connections = recv_connections.lock().await;
                             let connection = connections.get_mut(&recv_uuid).unwrap();
                             for path in paths {
-                                connection.registered_for.insert(path);
+                                connection.paths.add(path);
                             }
                         }
                         SocketMessageRecv::Set { key, value, flag } => {

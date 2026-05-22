@@ -1,6 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use crate::state::PathTrie;
 use regex::Regex;
 use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
 pub struct StateTrie {
@@ -8,7 +9,13 @@ pub struct StateTrie {
     is_path: bool,
     value: Option<Value>,
     subtries: HashMap<String, StateTrie>,
-    regex_0: Regex
+    regex_0: Regex,
+}
+
+impl Default for StateTrie {
+    fn default() -> Self {
+        StateTrie::empty()
+    }
 }
 
 impl StateTrie {
@@ -18,7 +25,7 @@ impl StateTrie {
             is_path: false,
             value: None,
             subtries: HashMap::new(),
-            regex_0: Regex::new("(?=[.(])").unwrap()
+            regex_0: Regex::new("(?=[.(])").unwrap(),
         }
     }
 
@@ -28,11 +35,11 @@ impl StateTrie {
             is_path: false,
             value: None,
             subtries: HashMap::new(),
-            regex_0: Regex::new("(?=[.(])").unwrap()
+            regex_0: Regex::new("(?=[.(])").unwrap(),
         }
     }
 
-    pub fn clone_inner(&self, null_values: bool) -> StateTrie {
+    fn clone_inner(&self, null_values: bool) -> StateTrie {
         let mut clone = StateTrie::empty();
         clone.is_path = self.is_path;
         clone.value = match null_values {
@@ -40,7 +47,10 @@ impl StateTrie {
             false => self.value.clone(),
         };
         for key in self.subtries.keys() {
-            clone.subtries.insert(key.clone(), self.subtries.get(key).unwrap().clone_inner(null_values));
+            clone.subtries.insert(
+                key.clone(),
+                self.subtries.get(key).unwrap().clone_inner(null_values),
+            );
         }
         clone
     }
@@ -50,11 +60,15 @@ impl StateTrie {
     }
 
     pub fn get(&self, key: String) -> Option<Value> {
-        let key_split = self.regex_0.split(&key).map(|s| s.to_string()).collect::<Vec<String>>();
+        let key_split = self
+            .regex_0
+            .split(&key)
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
         self.get_inner(&key_split, 0)
     }
 
-    pub fn get_inner(&self, path: &[String], index: usize) -> Option<Value> {
+    fn get_inner(&self, path: &[String], index: usize) -> Option<Value> {
         if index == path.len() {
             self.value.clone()
         } else if self.subtries.contains_key(&path[index]) {
@@ -70,12 +84,22 @@ impl StateTrie {
         results
     }
 
-    pub fn fetch_all(&self, results: &mut HashMap<String, Value>, prefix: String, filter_secrets: bool) {
-        if self.is_path && (!filter_secrets || !prefix.ends_with("Secret")) && self.value.is_some() {
+    pub fn fetch_all(
+        &self,
+        results: &mut HashMap<String, Value>,
+        prefix: String,
+        filter_secrets: bool,
+    ) {
+        if self.is_path && (!filter_secrets || !prefix.ends_with("Secret")) && self.value.is_some()
+        {
             results.insert(prefix.to_string(), self.value.clone().unwrap());
         }
         for key in self.subtries.keys() {
-            self.subtries.get(key).unwrap().fetch_all(results, format!("{prefix}{key}"), filter_secrets);
+            self.subtries.get(key).unwrap().fetch_all(
+                results,
+                format!("{prefix}{key}"),
+                filter_secrets,
+            );
         }
     }
 
@@ -98,7 +122,11 @@ impl StateTrie {
     }
 
     pub fn add(&mut self, path: String, obj: Option<Value>) {
-        let split = self.regex_0.split(path.as_str()).map(|s| s.to_string()).collect::<Vec<String>>();
+        let split = self
+            .regex_0
+            .split(path.as_str())
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
         let mut head = self.clone();
         for v in split.into_iter() {
             if head.subtries.contains_key(&v) {
@@ -117,16 +145,25 @@ impl StateTrie {
     }
 
     pub fn remove(&mut self, key: String) {
-        let key_split = self.regex_0.split(&key).map(|s| s.to_string()).collect::<Vec<String>>();
+        let key_split = self
+            .regex_0
+            .split(&key)
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
         self.remove_inner(&key_split, 0);
     }
 
-    pub fn remove_inner(&mut self, path: &[String], index: usize) -> bool {
+    fn remove_inner(&mut self, path: &[String], index: usize) -> bool {
         if index == path.len() {
             self.value = None;
             self.is_path = false;
         } else if self.subtries.contains_key(&path[index]) {
-            if self.subtries.get_mut(&path[index]).unwrap().remove_inner(path, index + 1) {
+            if self
+                .subtries
+                .get_mut(&path[index])
+                .unwrap()
+                .remove_inner(path, index + 1)
+            {
                 self.subtries.remove(&path[index]);
             }
         }
@@ -137,7 +174,7 @@ impl StateTrie {
         self.merge_inner_cloned(&change_trie, false)
     }
 
-    pub fn merge_inner_cloned(&self, change_trie: &StateTrie, removing: bool) -> StateTrie {
+    fn merge_inner_cloned(&self, change_trie: &StateTrie, removing: bool) -> StateTrie {
         let mut removing = removing;
         let mut change_trie = change_trie.clone();
         let mut clone = StateTrie::empty();
@@ -166,7 +203,11 @@ impl StateTrie {
         for key in all_keys {
             if change_trie.subtries.contains_key(&key) {
                 if self.subtries.contains_key(&key) {
-                    let mut subclone = self.subtries.get(&key).unwrap().merge_inner_cloned(change_trie.subtries.get(&key).unwrap(), removing);
+                    let mut subclone = self
+                        .subtries
+                        .get(&key)
+                        .unwrap()
+                        .merge_inner_cloned(change_trie.subtries.get(&key).unwrap(), removing);
                     if !subclone.is_empty() {
                         clone.subtries.insert(key.clone(), subclone);
                     }
@@ -182,9 +223,13 @@ impl StateTrie {
                     }
                 }
             } else if removing {
-                change_trie.subtries.insert(key.clone(), self.subtries.get(&key).unwrap().clone_nulled());
+                change_trie
+                    .subtries
+                    .insert(key.clone(), self.subtries.get(&key).unwrap().clone_nulled());
             } else {
-                clone.subtries.insert(key.clone(), self.subtries.get(&key).unwrap().clone());
+                clone
+                    .subtries
+                    .insert(key.clone(), self.subtries.get(&key).unwrap().clone());
             }
         }
 
@@ -206,12 +251,11 @@ impl StateTrie {
         }
         match self.is_empty() {
             true => None,
-            false => Some(clone)
+            false => Some(clone),
         }
     }
 
-    // TODO awaits PathTrie
-    // pub fn filter(&self, filter: PathTrie, filter_secrets: bool) -> HashMap<String, Value> {
-    //     filter.intersect(self, filter_secrets)
-    // }
+    pub fn filter(&self, filter: PathTrie, filter_secrets: bool) -> HashMap<String, Value> {
+        filter.intersect(self, filter_secrets)
+    }
 }

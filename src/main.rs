@@ -14,10 +14,11 @@ use tower_http::trace::TraceLayer;
 
 mod error;
 mod logging;
+pub(crate) mod state;
 mod static_files;
 mod ws;
-mod state;
 
+use crate::state::JSONStateManager;
 use error::Result;
 use static_files::handle_directories_with_router;
 use ws::{Connections, ws_handler};
@@ -53,13 +54,16 @@ pub struct Args {
 pub struct ScoreboardState {
     pub state: Arc<Mutex<HashMap<String, Value>>>,
     pub connections: Arc<Mutex<Connections>>,
+    pub state_manager: Arc<Mutex<JSONStateManager>>,
 }
 
 impl ScoreboardState {
     pub fn new() -> Self {
+        let connections = Arc::new(Mutex::new(Connections::default()));
         ScoreboardState {
             state: Default::default(),
-            connections: Default::default(),
+            connections: connections.clone(),
+            state_manager: Arc::new(Mutex::new(JSONStateManager::new(connections))),
         }
     }
 }
@@ -78,8 +82,13 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
+    let app_state = Arc::new(ScoreboardState::new());
+
     // TODO load version information p1
     // TODO initialize JSON State manager p1
+    let json_state_manager = Arc::new(Mutex::new(JSONStateManager::new(
+        app_state.connections.clone(),
+    )));
     // TODO initialize JSON listener p1
 
     if args.metrics {
@@ -87,8 +96,6 @@ async fn main() -> Result<()> {
     }
 
     // TODO handle autosave p2
-
-    let app_state = Arc::new(ScoreboardState::new());
 
     let app = Router::new()
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
