@@ -4,6 +4,9 @@
 
 Tolerance is a social contract, not a paradox. Be a kind, respectful person or you will be removed from this community.
 
+See the [WFTDA Code of Conduct](https://resources.wftda.org/membership/wftda-bylaws-and-code-of-conduct/) for additional
+information.
+
 ## Setting up your development environment
 
 1. Install the [Rust toolchain](https://rustup.rs/)
