@@ -20,7 +20,7 @@ const STAR_DELIMITER: &str = "*)";
 ///
 /// # Example
 /// ```
-/// # use scoreboard_rs::path_trie::PathTrie;
+/// # use scoreboard_rs::state::path_trie::PathTrie;
 /// let mut pt = PathTrie::default();
 /// pt.add("ScoreBoard.Period(*).Jam");
 ///
