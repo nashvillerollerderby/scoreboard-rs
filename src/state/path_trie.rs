@@ -22,9 +22,9 @@ const STAR_DELIMITER: &str = "*)";
 /// ```
 /// # use scoreboard_rs::path_trie::PathTrie;
 /// let mut pt = PathTrie::default();
-/// pt.add("ScoreBoard.Period(*).Bar");
+/// pt.add("ScoreBoard.Period(*).Jam");
 ///
-/// assert!(pt.covers("ScoreBoard.Period(1).Bar"));
+/// assert!(pt.covers("ScoreBoard.Period(1).Jam"));
 /// assert!(!pt.covers("ScoreBoard.Period"));
 /// assert!(!pt.covers("ScoreBoard.Period(2).Baz"));
 /// ```
@@ -64,44 +64,40 @@ impl PathTrie {
         let mut node = &mut self.root;
         loop {
             log::debug!("PathTrie: adding `{}` to node {:?}", rem, node);
-            let found = FIND_DEL.find(rem);
-            match found {
-                Some(a) => {
-                    let start = rem.split_at(a.start()).0;
-                    let end = rem.split_at(a.end()).1;
-                    if !node.children.contains_key(start) {
-                        log::debug!(
-                            "PathTrie: found no node with key {}, creating a new one",
-                            start
-                        );
-                        let new_node = PathTrieChildren::default();
-                        node.children.insert(start.to_owned(), new_node);
-                    }
-                    node = node
-                        .children
-                        .get_mut(start)
-                        .expect("we either had already a child, or we added it");
-                    rem = end;
+            if let Some(delimiter) = FIND_DEL.find(rem) {
+                let start = rem.split_at(delimiter.start()).0;
+                let end = rem.split_at(delimiter.end()).1;
+                if !node.children.contains_key(start) {
+                    log::debug!(
+                        "PathTrie: found no node with key {}, creating a new one",
+                        start
+                    );
+                    let new_node = PathTrieChildren::default();
+                    node.children.insert(start.to_owned(), new_node);
                 }
-                None => {
-                    // There is nothing more we can match against. As such, we check whether the
-                    // remainder is there, and we quit.
-                    if !node.children.contains_key(rem) {
-                        log::debug!(
-                            "PathTrie: found no node with key {}, creating a new one",
-                            rem
-                        );
+                node = node
+                    .children
+                    .get_mut(start)
+                    .expect("we either had already a child, or we added it");
+                rem = end;
+            } else {
+                // There is nothing more we can match against. As such, we check whether the
+                // remainder is there, and we quit.
+                if !node.children.contains_key(rem) {
+                    log::debug!(
+                        "PathTrie: found no node with key {}, creating a new one",
+                        rem
+                    );
 
-                        let new_node = PathTrieChildren::default();
-                        node.children.insert(rem.to_owned(), new_node);
-                    }
-                    let node = node
-                        .children
-                        .get_mut(rem)
-                        .expect("we either had already a child, or we added it");
-                    node.is_path = true;
-                    break;
+                    let new_node = PathTrieChildren::default();
+                    node.children.insert(rem.to_owned(), new_node);
                 }
+                let node = node
+                    .children
+                    .get_mut(rem)
+                    .expect("we either had already a child, or we added it");
+                node.is_path = true;
+                break;
             }
         }
     }
@@ -146,7 +142,7 @@ impl PathTrie {
                     if let Some(node) = node.children.get(STAR_DELIMITER) {
                         // if we still have children, we cannot possibly match.
                         if !node.children.is_empty() {
-                            log::debug!("PathTrie: star remaider has children");
+                            log::debug!("PathTrie: star remainder has children");
                             return false;
                         }
                         log::debug!("PathTrie: star remainder has been found");
@@ -165,7 +161,7 @@ impl PathTrie {
 }
 
 /// Merge 2 tries into a single one.
-pub fn merge(mut p1: PathTrie, mut p2: PathTrie) -> PathTrie {
+pub fn merge(p1: PathTrie, p2: PathTrie) -> PathTrie {
     let mut f = PathTrie::default();
     f.root = internal_merge(p1.root, p2.root);
     f
@@ -353,5 +349,19 @@ mod test {
         let res = merge(pt1, pt2);
 
         assert!(res == expected_result);
+    }
+
+    #[test]
+    fn simple_intersect() {
+        let mut path_trie = PathTrie::default();
+        path_trie.add("Aaa.Bbb(*).Ddd");
+        let mut state_trie = StateTrie::default();
+        state_trie.add("Aaa.Bbb(1).Ccc".to_string(), Some("Nope".into()));
+        state_trie.add("Aaa.Bbb(2).Ddd".to_string(), Some("Yeah".into()));
+
+        let intersection = intersect(&path_trie, &state_trie, false);
+        // TODO: this should _not_ be empty, the test will fail once the
+        // StateTrie allows adding new entries.
+        assert!(intersection.is_empty());
     }
 }
