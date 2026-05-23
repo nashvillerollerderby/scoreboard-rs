@@ -10,6 +10,7 @@ clap = { version = "4.6.1", features = ["derive"] }
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 futures-util = "0.3.32"
 headers = "0.4.1"
+lazy_static = { version = "1.5.0" }
 log = "0.4.29"
 log4rs = { version = "1.4.0", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -24,4 +25,5 @@ tower = "0.5.3"
 tower-http = { version = "0.6.8", features = ["full"] }
 thiserror = "2.0.18"
 regex = { version = "1.12.3" }
+rayon = { version = "1.12.0" }
 string-interner = "0.20.0"

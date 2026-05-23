@@ -18,7 +18,7 @@ pub(crate) mod state;
 mod static_files;
 mod ws;
 
-use crate::state::JSONStateManager;
+use crate::state::{JSONStateManager, ScoreboardState};
 use error::Result;
 use static_files::handle_directories_with_router;
 use ws::{Connections, ws_handler};
@@ -53,21 +53,6 @@ pub struct Args {
     /// The frequency in seconds that the autosave is triggered
     #[arg(long)]
     pub autosave_frequency_s: Option<u32>,
-}
-
-pub struct ScoreboardState {
-    pub connections: Arc<Mutex<Connections>>,
-    pub state_manager: Arc<Mutex<JSONStateManager>>,
-}
-
-impl ScoreboardState {
-    pub fn new() -> Self {
-        let connections = Arc::new(Mutex::new(Connections::default()));
-        ScoreboardState {
-            connections: connections.clone(),
-            state_manager: Arc::new(Mutex::new(JSONStateManager::new(connections))),
-        }
-    }
 }
 
 pub async fn urls() -> impl IntoResponse {

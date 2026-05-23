@@ -2,17 +2,11 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-mod listener;
-mod manager;
-pub mod path_trie;
-pub mod state_trie;
+use crate::{state::JSONStateManager, ws::Connections};
 
-pub use listener::JSONStateListener;
-pub use manager::JSONStateManager;
-pub use path_trie::PathTrie;
-pub use state_trie::StateTrie;
-
-use crate::ws::Connections;
+pub mod error;
+pub mod state;
+pub mod ws;
 
 pub struct ScoreboardState {
     pub connections: Arc<Mutex<Connections>>,

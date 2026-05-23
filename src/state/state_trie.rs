@@ -1,4 +1,4 @@
-use crate::state::PathTrie;
+use crate::state::{PathTrie, path_trie::intersect};
 use regex::Regex;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -256,6 +256,6 @@ impl StateTrie {
     }
 
     pub fn filter(&self, filter: PathTrie, filter_secrets: bool) -> HashMap<String, Value> {
-        filter.intersect(self, filter_secrets)
+        intersect(&filter, self, filter_secrets)
     }
 }

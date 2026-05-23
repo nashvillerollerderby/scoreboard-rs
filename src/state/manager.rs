@@ -1,4 +1,3 @@
-use crate::error::Result;
 use crate::state::StateTrie;
 use crate::state::listener::JSONStateListener;
 use crate::ws::{Connection, Connections};
