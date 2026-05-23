@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower::ServiceBuilder;
@@ -111,10 +112,8 @@ async fn main() -> Result<()> {
         .route("/urls", get(urls));
 
     // Set up static serve directory for webserver
-    #[cfg(target_os = "windows")]
-    let dir = r#"static\html"#.to_string();
-    #[cfg(not(target_os = "windows"))]
-    let dir = "static/html".to_string();
+    let path = Path::new("static").join("html");
+    let dir = path.to_str().unwrap().to_string();
     let serve_dir = ServeDir::new(dir.clone());
     let files_router = handle_directories_with_router(&dir).fallback_service(serve_dir);
     let app = app.fallback_service(files_router);
