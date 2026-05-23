@@ -81,7 +81,7 @@ impl ScoreBoardClock {
     }
 
     pub fn is_running(&self) -> bool {
-        self.stopped.load(Ordering::SeqCst)
+        !self.stopped.load(Ordering::SeqCst)
     }
 
     pub async fn start(&self, do_catch_up: bool) {
