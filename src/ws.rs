@@ -1,4 +1,4 @@
-use crate::ScoreboardState;
+use crate::ScoreBoardState;
 use crate::state::{JSONStateListener, PathTrie, StateTrie};
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
@@ -104,7 +104,7 @@ fn string_message(string: String) -> Message {
 }
 
 pub(crate) async fn ws_handler(
-    State(shared_state): State<Arc<ScoreboardState>>,
+    State(shared_state): State<Arc<ScoreBoardState>>,
     ws: WebSocketUpgrade,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -118,7 +118,7 @@ pub(crate) async fn ws_handler(
     ws.on_upgrade(move |socket| handle_socket(socket, addr, shared_state.clone()))
 }
 
-async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc<ScoreboardState>) {
+async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc<ScoreBoardState>) {
     if socket
         .send(Message::Ping(axum::body::Bytes::copy_from_slice(b"")))
         .await

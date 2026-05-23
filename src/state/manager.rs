@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 
 pub struct JSONStateManager {
     connections: Arc<Mutex<Connections>>,
-    state: StateTrie,
+    pub state: StateTrie,
     pending: Arc<AtomicI64>,
 }
 

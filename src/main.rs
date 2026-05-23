@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower::ServiceBuilder;
@@ -16,12 +17,17 @@ mod error;
 mod logging;
 pub(crate) mod state;
 mod static_files;
+mod util;
 mod ws;
 
 use crate::state::JSONStateManager;
 use error::Result;
 use static_files::handle_directories_with_router;
 use ws::{Connections, ws_handler};
+
+pub type Version = HashMap<String, Option<Value>>;
+
+pub const RELEASE: &str = include_str!("../release.json");
 
 pub const PENALTIES_RDCL: &str = include_str!("../config/penalties/RDCL.json");
 pub const PENALTIES_WFTDA_2016: &str = include_str!("../config/penalties/wftda2016.json");
@@ -55,15 +61,15 @@ pub struct Args {
     pub autosave_frequency_s: Option<u32>,
 }
 
-pub struct ScoreboardState {
+pub struct ScoreBoardState {
     pub connections: Arc<Mutex<Connections>>,
     pub state_manager: Arc<Mutex<JSONStateManager>>,
 }
 
-impl ScoreboardState {
+impl ScoreBoardState {
     pub fn new() -> Self {
         let connections = Arc::new(Mutex::new(Connections::default()));
-        ScoreboardState {
+        ScoreBoardState {
             connections: connections.clone(),
             state_manager: Arc::new(Mutex::new(JSONStateManager::new(connections))),
         }
@@ -74,7 +80,7 @@ pub async fn urls() -> impl IntoResponse {
     "0.0.0.0:8000\nlocalhost:8000"
 }
 
-async fn shutdown(app_state: Arc<ScoreboardState>) {
+async fn shutdown(app_state: Arc<ScoreBoardState>) {
     // TODO run autosave p2
 }
 
@@ -84,9 +90,15 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
-    let app_state = Arc::new(ScoreboardState::new());
+    let app_state = Arc::new(ScoreBoardState::new());
 
-    // TODO load version information p1
+    // load version information
+    {
+        let json = serde_json::from_str::<Version>(RELEASE)?;
+        let mut state_manager = app_state.state_manager.lock().await;
+        state_manager.state.add_all(json);
+    }
+    // TODO initialize JSON listener p1
 
     if args.metrics {
         // TODO initialize metrics p3
@@ -100,10 +112,8 @@ async fn main() -> Result<()> {
         .route("/urls", get(urls));
 
     // Set up static serve directory for webserver
-    #[cfg(target_os = "windows")]
-    let dir = r#"static\html"#.to_string();
-    #[cfg(not(target_os = "windows"))]
-    let dir = "static/html".to_string();
+    let path = Path::new("static").join("html");
+    let dir = path.to_str().unwrap().to_string();
     let serve_dir = ServeDir::new(dir.clone());
     let files_router = handle_directories_with_router(&dir).fallback_service(serve_dir);
     let app = app.fallback_service(files_router);
