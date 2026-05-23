@@ -1,5 +1,5 @@
-use crate::ScoreboardState;
-use crate::state::{JSONStateListener, PathTrie, StateTrie};
+use crate::state::path_trie::intersect;
+use crate::state::{JSONStateListener, PathTrie, ScoreboardState, StateTrie};
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
@@ -18,7 +18,7 @@ pub type Connections = HashMap<Uuid, Connection>;
 impl JSONStateListener for Connection {
     async fn send_updates(&mut self, state: &StateTrie, changes: &StateTrie) {
         self.state = state.clone();
-        let updates = self.paths.intersect(changes, true);
+        let updates = intersect(&self.paths, changes, true);
         if updates.len() == 0 {
             return;
         }
@@ -204,9 +204,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                             log::debug!("Register paths {:?}", paths);
                             let mut connections = recv_connections.lock().await;
                             let connection = connections.get_mut(&recv_uuid).unwrap();
-                            for path in paths {
-                                connection.paths.add(path);
-                            }
+                            connection.paths.add_all(paths.as_slice());
                         }
                         SocketMessageRecv::Set { key, value, flag } => {
                             log::debug!(
