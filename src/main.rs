@@ -14,6 +14,7 @@ use tower_http::trace::TraceLayer;
 
 mod error;
 mod logging;
+mod model;
 mod static_files;
 mod ws;
 
