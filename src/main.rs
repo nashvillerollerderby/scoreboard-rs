@@ -14,6 +14,7 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 mod error;
+mod event;
 mod logging;
 pub(crate) mod state;
 mod static_files;
