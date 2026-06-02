@@ -5,7 +5,9 @@ use tokio::sync::Mutex;
 use crate::{state::JSONStateManager, ws::Connections};
 
 pub mod error;
+pub mod model;
 pub mod state;
+pub mod utils;
 pub mod ws;
 
 pub struct ScoreboardState {

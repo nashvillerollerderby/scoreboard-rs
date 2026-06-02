@@ -203,7 +203,7 @@ impl StateTrie {
         for key in all_keys {
             if change_trie.subtries.contains_key(&key) {
                 if self.subtries.contains_key(&key) {
-                    let mut subclone = self
+                    let subclone = self
                         .subtries
                         .get(&key)
                         .unwrap()

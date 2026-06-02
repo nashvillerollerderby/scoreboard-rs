@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 mod listener;
 mod manager;
 pub mod path_trie;
-mod snapshotter;
+pub mod snapshotter;
 pub mod state_trie;
 
 pub use listener::JSONStateListener;

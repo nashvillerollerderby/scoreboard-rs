@@ -2,51 +2,90 @@ use std::{
     env::temp_dir,
     fs::{self, File},
     io::Write,
-    path::Path,
+    path::PathBuf,
+    sync::atomic::{AtomicBool, Ordering},
 };
 
-use prometheus::Histogram;
+use log::warn;
+use prometheus::{Histogram, HistogramOpts};
 
 use crate::{
     error::Error,
+    model::Game,
     state::{JSONStateListener, JSONStateManager, PathTrie, StateTrie},
+    utils::base_path::BasePath,
 };
 
 pub struct JSONStateSnapshotter {
-    directory: Box<Path>,
+    directory: PathBuf,
     filename: String,
-    write_on_next_update: bool,
+    write_on_next_update: AtomicBool,
     state: StateTrie,
     filters: PathTrie,
     use_metrics: bool,
-    update_state_duration: Histogram,
+    update_state_duration: Option<Histogram>,
 }
 
 impl JSONStateListener for JSONStateSnapshotter {
     async fn send_updates(&mut self, state: &StateTrie, _changes: &StateTrie) {
         self.state = state.clone();
-        if self.write_on_next_update {
-            self.write_file();
-            self.write_on_next_update = false;
+        if self.write_on_next_update.load(Ordering::SeqCst) {
+            let _ = self.write_file().await;
+            self.write_on_next_update.store(false, Ordering::SeqCst);
         }
     }
 }
 
 impl JSONStateSnapshotter {
     pub fn new(jsm: JSONStateManager, g: Game, use_metrics: bool) -> Self {
-        todo!()
+        let mut snapshotter = JSONStateSnapshotter {
+            directory: BasePath::get(),
+            filename: g.filename,
+            write_on_next_update: AtomicBool::new(false),
+            state: StateTrie::empty(),
+            filters: PathTrie::empty(),
+            use_metrics,
+            update_state_duration: None,
+        };
+
+        if snapshotter.use_metrics && snapshotter.update_state_duration.is_none() {
+            let opts = HistogramOpts::new(
+                "crg_json_state_disk_snapshot_duration_seconds",
+                "Time spent writing JSON state snapshots to disk",
+            );
+
+            let histogram = match Histogram::with_opts(opts) {
+                Ok(h) => Some(h),
+                Err(e) => {
+                    warn!(
+                        "Failed to initialize Snapshotter Metrics, falling back on logging only: {e}"
+                    );
+                    None
+                }
+            };
+
+            snapshotter.update_state_duration = histogram
+        }
+
+        snapshotter.filters.add("ScoreBoard.Version");
+        snapshotter
+            .filters
+            .add(&format!("ScoreBoard.Game({})", g.id));
+
+        snapshotter
     }
+
     pub fn write_on_next_update(&mut self) {
-        self.write_on_next_update = true;
+        self.write_on_next_update.store(true, Ordering::SeqCst);
     }
     pub fn set_filename(&mut self, new_name: String) {
         self.filename = new_name;
     }
 
     pub async fn write_file(&self) -> Result<(), Error> {
-        let timer = match self.use_metrics {
-            true => Some(Histogram::start_timer(&self.update_state_duration)),
-            false => None,
+        let timer = match (self.use_metrics, self.update_state_duration.clone()) {
+            (true, Some(histogram)) => Some(Histogram::start_timer(&histogram)),
+            (_, _) => None,
         };
 
         let file_path = self
