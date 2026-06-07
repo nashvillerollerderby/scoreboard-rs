@@ -3,25 +3,24 @@ use axum::response::IntoResponse;
 use axum::routing::{any, get};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-mod error;
+pub(crate) mod error;
 mod logging;
+pub(crate) mod model;
 pub(crate) mod state;
 mod static_files;
+pub(crate) mod utils;
 mod ws;
 
-use crate::state::{JSONStateManager, ScoreboardState};
+use crate::state::ScoreboardState;
 use error::Result;
 use static_files::handle_directories_with_router;
-use ws::{Connections, ws_handler};
+use ws::ws_handler;
 
 pub const PENALTIES_RDCL: &str = include_str!("../config/penalties/RDCL.json");
 pub const PENALTIES_WFTDA_2016: &str = include_str!("../config/penalties/wftda2016.json");
