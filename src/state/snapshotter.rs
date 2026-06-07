@@ -29,9 +29,9 @@ pub struct JSONStateSnapshotter {
 impl JSONStateListener for JSONStateSnapshotter {
     async fn send_updates(&mut self, state: &StateTrie, _changes: &StateTrie) {
         self.state = state.clone();
-        if self.write_on_next_update.load(Ordering::SeqCst) {
+
+        if self.write_on_next_update.swap(false, Ordering::SeqCst) {
             let _ = self.write_file().await;
-            self.write_on_next_update.store(false, Ordering::SeqCst);
         }
     }
 }
@@ -116,8 +116,9 @@ impl JSONStateSnapshotter {
         }
 
         if self.use_metrics {
-            // unwrap safety: if use metrics is true, then this should never be none.
-            timer.unwrap().observe_duration();
+            timer
+                .expect("If use metrics is true, this should never be false")
+                .observe_duration();
         }
 
         Ok(())
