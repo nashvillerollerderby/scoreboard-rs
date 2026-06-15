@@ -336,7 +336,7 @@ struct Jam {
     read_only: bool,
     number: usize,
     period_number: usize,
-    star_pass: bool, // "true, if either team had an SP"
+    star_pass: bool, // "true, if either team had a SP"
     overtime: bool,
     injury_continuation: bool,
     duration: u64,                   // todo: chrono
