@@ -89,6 +89,8 @@ mod tests {
         state_manager
             .update_state("foo".to_string(), Value::String("bar".to_string()))
             .await;
+
+        connection.paths.add("foo");
         state_manager.register(&mut connection).await;
 
         match rx.recv_timeout(Duration::from_secs(1)) {

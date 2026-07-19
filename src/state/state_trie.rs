@@ -127,14 +127,14 @@ impl StateTrie {
             .split(path.as_str())
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-        let mut head = self.clone();
+        let mut head = self;
         for v in split.into_iter() {
             if head.subtries.contains_key(&v) {
-                head = head.subtries.get(&v).unwrap().clone();
+                head = head.subtries.get_mut(&v).unwrap();
             } else {
-                let child = StateTrie::empty();
-                head.subtries.insert(v, child.clone());
-                head = child;
+                let mut child = StateTrie::empty();
+                head.subtries.insert(v.clone(), child);
+                head = head.subtries.get_mut(&v).unwrap();
             }
         }
         head.is_path = true;
