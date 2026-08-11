@@ -1,46 +1,48 @@
-use crate::ScoreboardState;
+use crate::state::path_trie::intersect;
+use crate::state::{JSONStateListener, PathTrie, ScoreboardState, StateTrie};
 use axum::extract::ws::{Message, Utf8Bytes, WebSocket};
 use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use axum_extra::TypedHeader;
 use crossbeam::channel;
 use futures_util::{SinkExt, StreamExt};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
-use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
+use serde_json::Value;
+use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use uuid::Uuid;
-
-pub struct StateTrie {
-    changes: HashMap<String, Value>,
-}
-
-pub trait JSONStateUpdate {
-    async fn handle_updates(&self, state: StateTrie);
-}
 
 pub type Connections = HashMap<Uuid, Connection>;
 
-impl JSONStateUpdate for Connections {
-    async fn handle_updates(&self, _state_trie: StateTrie) {
-        for (_, connection) in self {
-            // connection.send_registered_changes(&state_trie);
+impl JSONStateListener for Connection {
+    async fn send_updates(&mut self, state: &StateTrie, changes: &StateTrie) {
+        self.state = state.clone();
+        let updates = intersect(&self.paths, changes, true);
+        if updates.len() == 0 {
+            return;
+        }
+        match self.sender.send(SocketMessageSend::Updates(updates)) {
+            Ok(_) => {}
+            Err(e) => {
+                log::error!("{e}");
+            }
         }
     }
 }
 
+#[derive(Clone)]
 pub struct Connection {
     pub sender: channel::Sender<SocketMessageSend>,
-    pub registered_for: HashSet<String>,
+    pub paths: PathTrie,
+    pub state: StateTrie,
 }
 
 impl Connection {
     pub fn new(sender: channel::Sender<SocketMessageSend>) -> Self {
         Connection {
-            registered_for: Default::default(),
+            state: StateTrie::empty(),
+            paths: PathTrie::empty(),
             sender,
         }
     }
@@ -133,27 +135,18 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
     let uuid = Uuid::new_v4();
     let (tx, rx) = channel::unbounded::<SocketMessageSend>();
     {
+        let mut connection = Connection::new(tx);
+        shared_state
+            .state_manager
+            .lock()
+            .await
+            .register(&mut connection)
+            .await;
         shared_state
             .connections
             .lock()
             .await
-            .insert(uuid.clone(), Connection::new(tx));
-    }
-
-    {
-        log::info!("Sending new subscriber message to client {}", uuid);
-        let state = shared_state.state.lock().await;
-        socket
-            .send(string_message(
-                serde_json::to_string(&json!({
-                    "state": *state,
-                }))
-                .unwrap(),
-            ))
-            .await
-            .expect("Unable to send new subscriber message");
-        log::info!("New subscriber message: {:?}", state);
-        log::info!("New subscriber message sent to client {}", uuid);
+            .insert(uuid.clone(), connection);
     }
 
     let recv_connections = shared_state.connections.clone();
@@ -211,9 +204,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr, shared_state: Arc
                             log::debug!("Register paths {:?}", paths);
                             let mut connections = recv_connections.lock().await;
                             let connection = connections.get_mut(&recv_uuid).unwrap();
-                            for path in paths {
-                                connection.registered_for.insert(path);
-                            }
+                            connection.paths.add_all(paths.as_slice());
                         }
                         SocketMessageRecv::Set { key, value, flag } => {
                             log::debug!(

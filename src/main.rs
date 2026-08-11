@@ -3,24 +3,28 @@ use axum::response::IntoResponse;
 use axum::routing::{any, get};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-mod error;
+pub(crate) mod error;
 mod logging;
-mod model;
+pub(crate) mod model;
+pub(crate) mod state;
 mod static_files;
+pub(crate) mod utils;
 mod ws;
 
+use crate::state::ScoreboardState;
 use error::Result;
 use static_files::handle_directories_with_router;
-use ws::{Connections, ws_handler};
+use ws::ws_handler;
+
+pub const PENALTIES_RDCL: &str = include_str!("../config/penalties/RDCL.json");
+pub const PENALTIES_WFTDA_2016: &str = include_str!("../config/penalties/wftda2016.json");
+pub const PENALTIES_WFTDA_2018: &str = include_str!("../config/penalties/wftda2018.json");
 
 #[derive(Parser, Debug, Serialize, Deserialize)]
 #[command(version, about, long_about = None)]
@@ -50,26 +54,12 @@ pub struct Args {
     pub autosave_frequency_s: Option<u32>,
 }
 
-pub struct ScoreboardState {
-    pub state: Arc<Mutex<HashMap<String, Value>>>,
-    pub connections: Arc<Mutex<Connections>>,
-}
-
-impl ScoreboardState {
-    pub fn new() -> Self {
-        ScoreboardState {
-            state: Default::default(),
-            connections: Default::default(),
-        }
-    }
-}
-
 pub async fn urls() -> impl IntoResponse {
     "0.0.0.0:8000\nlocalhost:8000"
 }
 
 async fn shutdown(app_state: Arc<ScoreboardState>) {
-    // TODO run autosave p1
+    // TODO run autosave p2
 }
 
 #[tokio::main]
@@ -78,17 +68,15 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
+    let app_state = Arc::new(ScoreboardState::new());
+
     // TODO load version information p1
-    // TODO initialize JSON State manager p1
-    // TODO initialize JSON listener p1
 
     if args.metrics {
         // TODO initialize metrics p3
     }
 
-    // TODO handle autosave p1
-
-    let app_state = Arc::new(ScoreboardState::new());
+    // TODO handle autosave p2
 
     let app = Router::new()
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
@@ -96,6 +84,9 @@ async fn main() -> Result<()> {
         .route("/urls", get(urls));
 
     // Set up static serve directory for webserver
+    #[cfg(target_os = "windows")]
+    let dir = r#"static\html"#.to_string();
+    #[cfg(not(target_os = "windows"))]
     let dir = "static/html".to_string();
     let serve_dir = ServeDir::new(dir.clone());
     let files_router = handle_directories_with_router(&dir).fallback_service(serve_dir);

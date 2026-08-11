@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 /// The Object Model
 ///
@@ -35,9 +38,9 @@ struct ScoringTrip {
     score: usize,
     after_s_p: bool,
     current: bool,
-    duration: u64, // todo: chrono
+    duration: u64,        // todo: chrono
     jam_clock_start: u64, // todo: chrono
-    jam_clock_end: u64, // todo: chrono
+    jam_clock_end: u64,   // todo: chrono
     annotation: String,
 }
 
@@ -77,8 +80,8 @@ enum RuleValue {
     Time(u64), // todo: chrono
 }
 
-struct Game {
-    id: String,
+pub struct Game {
+    pub(crate) id: String,
     read_only: bool,
     name: String,
     name_format: String,
@@ -105,7 +108,7 @@ struct Game {
     head_nso: Arc<Official>,
     head_ref: Arc<Official>,
     suspensions_served: String,
-    filename: String,
+    pub(crate) filename: String,
     last_file_update: String,
     update_in_progress: bool,
     statsbook_exists: bool,
@@ -211,7 +214,7 @@ struct Team {
     display_lead: bool,
     star_pass: bool,
     star_pass_trip: Arc<ScoringTrip>,
-    prepared_team: Arc<Team>, // PreparedX means "X when it's on disk"
+    prepared_team: Arc<Team>,      // PreparedX means "X when it's on disk"
     prepared_team_connected: bool, // todo: wtf?
     captain: Arc<Skater>,
     active_score_adjustment: Arc<ScoreAdjustment>,
@@ -220,13 +223,12 @@ struct Team {
     all_blockers_set: bool,
     on_track_count: usize,
     alternate_name: HashSet<ValWithId>, // ids appear domain-limited to Alternate?NameId
-    color: HashSet<ValWithId>, // [sic]
+    color: HashSet<ValWithId>,          // [sic]
     skater: HashSet<Skater>,
     position: HashSet<Position>,
     time_out: HashSet<Timeout>,
     box_trip: HashSet<BoxTrip>,
     score_adjustment: HashSet<ScoreAdjustment>,
-
 }
 
 enum AlternateNameId {
@@ -279,11 +281,11 @@ struct Timeout {
     running: bool,
     preceding_jam: Arc<Jam>,
     preceding_jam_number: usize,
-    duration: u64, // todo: chrono
+    duration: u64,                   // todo: chrono
     period_clock_elapsed_start: u64, // todo: chrono
-    period_clock_elapsed_end: u64, // todo: chrono
-    walltime_start: u64, // todo: chrono
-    walltime_end: u64, // todo: chrono
+    period_clock_elapsed_end: u64,   // todo: chrono
+    walltime_start: u64,             // todo: chrono
+    walltime_end: u64,               // todo: chrono
 }
 
 enum TimeoutOwner {
@@ -334,15 +336,15 @@ struct Jam {
     read_only: bool,
     number: usize,
     period_number: usize,
-    star_pass: bool, // "true, if either team had an SP"
+    star_pass: bool, // "true, if either team had a SP"
     overtime: bool,
     injury_continuation: bool,
-    duration: u64, // todo: chrono
+    duration: u64,                   // todo: chrono
     period_clock_elapsed_start: u64, // todo: chrono
-    period_clock_elapsed_end: u64, // todo: chrono
-    period_clock_display_end: u64, // todo: chrono
-    walltime_start: u64, // todo: chrono
-    walltime_end: u64, // todo: chrono
+    period_clock_elapsed_end: u64,   // todo: chrono
+    period_clock_display_end: u64,   // todo: chrono
+    walltime_start: u64,             // todo: chrono
+    walltime_end: u64,               // todo: chrono
     team_jam: HashSet<TeamJam>,
     penalty: HashSet<Penalty>,
     timeouts_after: HashSet<Timeout>,
@@ -400,9 +402,9 @@ struct Period {
     current_jam: Arc<Jam>,
     current_jam_number: usize, // because current_jam.number is too hard to type?
     sudden_scoring: bool,
-    duration: u64, // todo: chrono
-    walltime_start: u64, // todo: chrono
-    walltime_end: u64, // todo: chrono
+    duration: u64,         // todo: chrono
+    walltime_start: u64,   // todo: chrono
+    walltime_end: u64,     // todo: chrono
     local_time_start: u64, // todo: chrono
     team_1_penalty_count: usize,
     team_2_penalty_count: usize,
@@ -565,7 +567,8 @@ struct Member {
     prepared_official: Arc<Official>, // PreparedX means "X when it's on disk"
 }
 
-enum SkaterRole { // from core.interfaces.Role
+enum SkaterRole {
+    // from core.interfaces.Role
     Jammer,
     Pivot,
     Blocker,
