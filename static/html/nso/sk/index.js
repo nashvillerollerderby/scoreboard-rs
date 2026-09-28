@@ -28,7 +28,7 @@ function toTitle() {
     (team === 'both'
       ? 'both'
       : WS.state[prefix + 'AlternateName(operator)'] || WS.state[prefix + 'UniformColor'] || WS.state[prefix + 'Name'] || '') +
-    ' | Roller Derby ScoreBoard'
+    ' | CRG ScoreBoard'
   );
 }
 

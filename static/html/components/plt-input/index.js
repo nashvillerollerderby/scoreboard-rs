@@ -23,17 +23,54 @@
     prefix + 'CurrentPeriodNumber',
     prefix + 'Period(*).CurrentJamNumber',
     prefix + 'Team(*).Skater(*).Position',
-    prefix + 'Team(*).Position(*).',
+    prefix + 'Team(*).Position(*)',
     prefix + 'Team(*).AllBlockersSet',
   ]);
 })();
 
-function _pltSetRole(k, role, ignoreIneligible) {
+function _pltGetFieldingPrefix(gameId, teamId, skaterId) {
+  var position = WS.state['ScoreBoard.Game(' + gameId + ').Team(' + teamId + ').Skater(' + skaterId + ').Position'];
+  position = position.slice(position.lastIndexOf('_') + 1);
+  var fieldingPrefix = ').TeamJam(' + teamId + ').Fielding(' + position + ')';
+  if (
+    isTrue(WS.state['ScoreBoard.Game(' + gameId + ').InJam']) ||
+    isTrue(WS.state['ScoreBoard.Game(' + gameId + ').Team(' + teamId + ').FieldingAdvancePending'])
+  ) {
+    fieldingPrefix =
+      'ScoreBoard.Game(' +
+      gameId +
+      ').Period(' +
+      WS.state['ScoreBoard.Game(' + gameId + ').CurrentPeriodNumber'] +
+      ').Jam(' +
+      WS.state['ScoreBoard.Game(' + gameId + ').Period(' + WS.state['ScoreBoard.Game(' + gameId + ').CurrentPeriodNumber'] + ').CurrentJamNumber'] +
+      fieldingPrefix;
+  } else {
+    fieldingPrefix = 'ScoreBoard.Game(' + gameId + ').Jam(' + WS.state['ScoreBoard.Game(' + gameId + ').UpcomingJamNumber'] + fieldingPrefix;
+  }
+  return fieldingPrefix;
+}
+
+function pltMaySub(k) {
+  return isTrue(WS.state[k.upTo('Skater') + '.PenaltyBox']) || isTrue(WS.state[k.upTo('Skater') + '.HasUnserved']);
+}
+
+function _pltSetRole(k, role, ignoreIneligible, ignoreRoleChange) {
   const oldRole = WS.state[k + '.Role'];
   if (oldRole === 'Ineligible' && !ignoreIneligible) {
     _pltOpenIneligibleDialog(k, role);
-  } else if (((role === 'Blocker' && oldRole !== 'Pivot') || (role === 'Pivot' && isTrue(WS.state[k.upTo('Team') + '.NoPivot']))) &&
-    isTrue(WS.state[k.upTo('Team') + '.AllBlockersSet']) && oldRole !== 'Blocker') {
+  } else if (pltMaySub(k) && !ignoreRoleChange) {
+    _pltOpenNoRoleChangeDialog(k, role);
+  } else if (
+    (role === 'Jammer' || role === 'Pivot') &&
+    (isTrue(WS.state[k.upTo('Team') + '.Position(' + role + ').PenaltyBox']) ||
+      isTrue(WS.state[k.upTo('Team') + '.Position(' + role + ').HasUnserved']))
+  ) {
+    _pltOpenSubstituteDialog(k, role);
+  } else if (
+    ((role === 'Blocker' && oldRole !== 'Pivot') || (role === 'Pivot' && isTrue(WS.state[k.upTo('Team') + '.NoPivot']))) &&
+    isTrue(WS.state[k.upTo('Team') + '.AllBlockersSet']) &&
+    oldRole !== 'Blocker'
+  ) {
     _pltOpenReplaceDialog(k, role);
   } else {
     WS.Set(k + '.Role', role);
@@ -41,21 +78,40 @@ function _pltSetRole(k, role, ignoreIneligible) {
 }
 
 function pltSetJammer(k) {
-  _pltSetRole(k, 'Jammer', false);
+  _pltSetRole(k, 'Jammer', false, false);
 }
 
 function pltSetPivot(k) {
-  _pltSetRole(k, 'Pivot', false);
+  _pltSetRole(k, 'Pivot', false, false);
 }
 
 function pltSetBlocker(k) {
-  _pltSetRole(k, 'Blocker', false);
+  _pltSetRole(k, 'Blocker', false, false);
 }
 
-function pltAdvanceOrAnnotation(k, v, elem) {
-  if (elem.hasClass('Advance')) {
+function pltToBoxString(k, v) {
+  return isTrue(v) ? '' : 'Box';
+}
+
+function pltToggleBox(k, v, elem) {
+  const fieldingPath = _pltGetFieldingPrefix(k.Game, k.Team, k.Skater);
+  if (elem.hasClass('Serving')) {
+    WS.Set(k + '.PenaltyBox', false);
+  } else if (WS.state[fieldingPath + '.CurrentBoxTrip'] == null || isTrue(WS.state[k + '.HasUnserved'])) {
+    WS.Set(k + '.PenaltyBox', true);
+  } else {
+    pltOpenUnendDialog(fieldingPath);
+  }
+}
+
+function pltAdvance(k, v, elem) {
+  if (elem.hasClass('Show')) {
     WS.Set(k.upTo('Team') + '.AdvanceFieldings', true);
-  } else if (elem.hasClass('Show')) {
+  }
+}
+
+function pltAnnotation(k, v, elem) {
+  if (elem.hasClass('Show')) {
     _pltOpenAnnotationEditor(k.Game, k.Team, k.Skater);
   }
 }
@@ -76,9 +132,7 @@ function pltToPeriodJam(k) {
 }
 
 function _pltUpdateCurrentPeriodStyle() {
-  const prefix = _windowFunctions.getParam('game')
-    ? 'ScoreBoard.Game(' + _windowFunctions.getParam('game') + ').'
-    : 'ScoreBoard.CurrentGame.';
+  const prefix = _windowFunctions.getParam('game') ? 'ScoreBoard.Game(' + _windowFunctions.getParam('game') + ').' : 'ScoreBoard.CurrentGame.';
   const periodNumber = WS.state[prefix + 'Clock(Period).Number'];
   if (periodNumber == null) {
     return;
@@ -93,9 +147,7 @@ function _pltUpdateCurrentPeriodStyle() {
 }
 
 function _pltUpdateCurrentJamStyle() {
-  const prefix = _windowFunctions.getParam('game')
-    ? 'ScoreBoard.Game(' + _windowFunctions.getParam('game') + ').'
-    : 'ScoreBoard.CurrentGame.';
+  const prefix = _windowFunctions.getParam('game') ? 'ScoreBoard.Game(' + _windowFunctions.getParam('game') + ').' : 'ScoreBoard.CurrentGame.';
   const periodNumber = WS.state[prefix + 'Clock(Period).Number'];
   const jamNumber = WS.state[prefix + 'Clock(Jam).Number'];
   if (jamNumber == null || periodNumber == null) {
@@ -114,11 +166,12 @@ function _pltUpdateCurrentJamStyle() {
 //
 //###################################################################
 
-let pltReplacePath = '';
-let pltReplaceTarget = '';
+var pltReplacePath = '';
+var pltReplaceTarget = '';
 
 function _pltOpenReplaceDialog(k, pos) {
-  pltReplacePath = k + '.Role'; pltReplaceTarget = pos;
+  pltReplacePath = k + '.Role';
+  pltReplaceTarget = pos;
   WS.SetupDialog($('#BlockerReplaceDialog'), k, { modal: true, title: 'Replace Blocker', width: '400px' });
 }
 
@@ -133,12 +186,13 @@ function pltFinishReplace(k, v, elem, event) {
 //
 //###################################################################
 
-let pltIneligiblePath = '';
-let pltIneligibleTarget = '';
+var pltIneligiblePath = '';
+var pltIneligibleTarget = '';
 
 function _pltOpenIneligibleDialog(k, role) {
-  pltIneligiblePath = k; pltIneligibleTarget = role;
-  WS.SetupDialog($('#IneligibleDialog'), k, { modal: true, title: 'Ineligible Skater', width: '400px' })
+  pltIneligiblePath = k;
+  pltIneligibleTarget = role;
+  WS.SetupDialog($('#IneligibleDialog'), k, { modal: true, title: 'Ineligible Skater', width: '400px' });
 }
 
 function pltToIneligibleReason(k, v) {
@@ -155,7 +209,82 @@ function pltToIneligibleReason(k, v) {
 
 function pltIgnoreIneligible(k, v, elem, event) {
   sbCloseDialog(k, v, elem, event);
-  _pltSetRole(pltIneligiblePath, pltIneligibleTarget, true);
+  _pltSetRole(pltIneligiblePath, pltIneligibleTarget, true, false);
+}
+
+//###################################################################
+//
+//  No Role Change Dialog
+//
+//###################################################################
+
+var pltRoleChangePath = '';
+var pltRoleChangeTarget = '';
+
+function _pltOpenNoRoleChangeDialog(k, role) {
+  pltRoleChangePath = k;
+  pltRoleChangeTarget = role;
+  WS.SetupDialog($('#NoRoleChangeDialog'), k, { modal: true, title: 'Role Change not Allowed', width: '400px' });
+}
+
+function pltIgnoreRoleChange(k, v, elem, event) {
+  sbCloseDialog(k, v, elem, event);
+  _pltSetRole(pltRoleChangePath, pltRoleChangeTarget, true, true);
+}
+
+//###################################################################
+//
+//  Substitute Dialog
+//
+//###################################################################
+
+var pltSubstituteSkater = '';
+var pltSubstituteTarget = '';
+
+function _pltOpenSubstituteDialog(k, role) {
+  pltSubstituteSkater = k.Skater;
+  pltSubstituteTarget = ').TeamJam(' + k.Team + ').Fielding(' + role + ')';
+  if (isTrue(WS.state['ScoreBoard.Game(' + k.Game + ').InJam']) || isTrue(WS.state[k.upTo('Team') + '.FieldingAdvancePending'])) {
+    pltSubstituteTarget =
+      k.upTo('Game') +
+      '.Period(' +
+      WS.state[k.upTo('Game') + '.CurrentPeriodNumber'] +
+      ').Jam(' +
+      WS.state[k.upTo('Game') + '.Period(' + WS.state[k.upTo('Game') + '.CurrentPeriodNumber'] + ').CurrentJamNumber'] +
+      pltSubstituteTarget;
+  } else {
+    pltSubstituteTarget = k.upTo('Game') + '.Jam(' + WS.state[k.upTo('Game') + '.UpcomingJamNumber'] + pltSubstituteTarget;
+  }
+  WS.SetupDialog($('#SubstituteDialog'), pltSubstituteTarget, { modal: true, title: 'Substitute Skater?', width: '400px' });
+}
+
+function pltToPosition(k) {
+  return k.Fielding;
+}
+
+function pltDoSubstitute(k, v, elem, event) {
+  sbCloseDialog(k, v, elem, event);
+  console.log(pltSubstituteTarget, pltSubstituteSkater);
+  WS.Set(pltSubstituteTarget + '.Skater', pltSubstituteSkater, 'change');
+}
+
+//###################################################################
+//
+//  Unend Dialog
+//
+//###################################################################
+
+function pltOpenUnendDialog(k) {
+  WS.SetupDialog($('#UnendDialog'), k, {
+    modal: true,
+    title: 'Continue Box Trip?',
+    width: '400px',
+    buttons: {
+      Cancel: function () {
+        $(this).dialog('close');
+      },
+    },
+  });
 }
 
 //###################################################################
@@ -182,7 +311,7 @@ function _pltOpenPenaltyEditor(g, t, s, p) {
   WS.SetupDialog($('#PenaltyEditor'), prefix + '.Penalty(' + p + ')', {
     modal: true,
     title: teamName + ' ' + skaterNumber + ' (' + skaterName + ')',
-    width: '80%',
+    width: Math.min(1200, 0.9 * window.innerWidth),
   });
 }
 
@@ -194,15 +323,12 @@ function pltCurrentIfInvalid(k, v, elem) {
   return elem.children('[value="' + v + '"]').length
     ? v
     : WS.state[k.upTo('Period') + '.CurrentJam'] ||
-    WS.state[
-    'ScoreBoard.Game(' + k.Game + ').Period(' + WS.state['ScoreBoard.Game(' + k.Game + ').CurrentPeriodNumber'] + ').CurrentJam'
-    ];
+        WS.state['ScoreBoard.Game(' + k.Game + ').Period(' + WS.state['ScoreBoard.Game(' + k.Game + ').CurrentPeriodNumber'] + ').CurrentJam'];
 }
 
 function pltIsThisPeriod(k, v, elem) {
   return (
-    (v != null && v != elem.attr('Period')) ||
-    (v == null && WS.state['ScoreBoard.Game(' + k.Game + ').CurrentPeriodNumber'] != elem.attr('Period'))
+    (v != null && v != elem.attr('Period')) || (v == null && WS.state['ScoreBoard.Game(' + k.Game + ').CurrentPeriodNumber'] != elem.attr('Period'))
   );
 }
 
@@ -235,7 +361,18 @@ function pltToPenaltyCodeDisplay(k, v, elem, suffix) {
 }
 
 function pltToExpCodeDisplay(k, v, elem) {
-  return pltToPenaltyCodeDisplay(k, v, elem, '(EXP)');
+  return pltToPenaltyCodeDisplay(k, v, elem, ' (EXP)');
+}
+
+function pltToggleReassign(k, v, elem) {
+  elem.closest('.CalledBy').toggleClass('Reassign');
+  elem.toggleClass('sbActive', elem.closest('.CalledBy').hasClass('Reassign'));
+}
+
+function pltFilterOfficial(k, v, elem) {
+  const targetPosition = elem.parent().parent().attr('OfficialPosition');
+  const officialsPosition = v.match(/\p{Lu}/gu).join();
+  return targetPosition.startsWith(officialsPosition);
 }
 
 //###################################################################
@@ -245,25 +382,7 @@ function pltToExpCodeDisplay(k, v, elem) {
 //###################################################################
 
 function _pltOpenAnnotationEditor(gameId, teamId, skaterId) {
-  var position = WS.state['ScoreBoard.Game(' + gameId + ').Team(' + teamId + ').Skater(' + skaterId + ').Position'];
-  position = position.slice(position.lastIndexOf('_') + 1);
-  var fieldingPrefix = ').TeamJam(' + teamId + ').Fielding(' + position + ')';
-  if (isTrue(WS.state['ScoreBoard.Game(' + gameId + ').InJam'])) {
-    fieldingPrefix =
-      'ScoreBoard.Game(' +
-      gameId +
-      ').Period(' +
-      WS.state['ScoreBoard.Game(' + gameId + ').CurrentPeriodNumber'] +
-      ').Jam(' +
-      WS.state[
-      'ScoreBoard.Game(' + gameId + ').Period(' + WS.state['ScoreBoard.Game(' + gameId + ').CurrentPeriodNumber'] + ').CurrentJamNumber'
-      ] +
-      fieldingPrefix;
-  } else {
-    fieldingPrefix =
-      'ScoreBoard.Game(' + gameId + ').Jam(' + WS.state['ScoreBoard.Game(' + gameId + ').UpcomingJamNumber'] + fieldingPrefix;
-  }
-  WS.SetupDialog($('#AnnotationEditor'), fieldingPrefix, {
+  WS.SetupDialog($('#AnnotationEditor'), _pltGetFieldingPrefix(gameId, teamId, skaterId), {
     modal: true,
     title: 'Annotation & Box Trip Editor',
     width: '700px',
@@ -273,6 +392,10 @@ function _pltOpenAnnotationEditor(gameId, teamId, skaterId) {
       },
     },
   });
+}
+
+function pltSubable(k) {
+  return !isTrue(WS.state[k.upTo('Fielding') + '.PenaltyBox']) && !isTrue(WS.state[k.upTo('Fielding') + '.HasUnserved']);
 }
 
 function pltNoUnend(k, v) {
