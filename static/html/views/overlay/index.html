@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+<!doctype html>
 <html sbPrefix="$: ScoreBoard.Settings.Setting(Overlay.Interactive : )" sbCss="font-size: $.Scaling: 'calc(' + v + ' * .12pt)'">
   <head>
-    <title>Stream Overlay | Roller Derby ScoreBoard</title>
+    <title>Stream Overlay | CRG ScoreBoard</title>
     <script type="text/javascript" src="/external/jquery/jquery.js"></script>
     <script type="text/javascript" src="/json/core.js"></script>
 
@@ -20,11 +20,16 @@
             <div class="Indicator Box" sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)">
               <div class="Clock ShowInJam" sbDisplay="StarPass, Lead, Lost: ovlToIndicator"></div>
             </div>
+            <div
+              class="SmallIndicator Box"
+              sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)"
+              sbClass="sbHide: Color(overlay.fg), Color(overlay.bg): sbIsEmpty"
+            ></div>
             <div class="Team Row barBackground">
               <div class="Name VerticalCenter Box" sbDisplay="AlternateName(overlay),Name"></div>
               <div class="Score VerticalCenter Box" sbDisplay="Score"></div>
               <div class="Mini Box">
-                <div class="JamScore" sbDisplay="JamScore"></div>
+                <div class="JamScore" sbClass="NoInitial: NoInitial | Overtime: /ScoreBoard.CurrentGame.InOvertime" sbDisplay="JamScore"></div>
               </div>
               <div class="DotTimeouts Box">
                 <div class="Dot Timeout1" sbClass="Used: Timeouts: <1"></div>
@@ -34,10 +39,10 @@
               </div>
             </div>
             <div class="JammerWrapper">
-              <div class="JammerBox ShowInJam Clock" sbCss="color: Color(overlay.fg) | background: Color(overlay.bg)">
+              <div class="JammerBox ShowInJam Clock">
                 <div
                   sbForeach="Position: Jammer, Pivot, Blocker1, Blocker2, Blocker3: only"
-                  sbClass="Jamming: ^StarPass: ovlIsJamming | InBox: PenaltyBox | Penalized: CurrentPenalties: !== '' | HasClock: PenaltyTime: sbIsNotEmpty"
+                  sbClass="Jamming: ^StarPass, InJam: ovlIsJamming | InBox: PenaltyBox | Penalized: CurrentPenalties: !== '' | HasClock: PenaltyTime: sbIsNotEmpty"
                 >
                   <div class="Number" sbDisplay="RosterNumber"></div>
                   <div class="Name" sbDisplay="Name"></div>
@@ -61,7 +66,8 @@
 
           <div
             class="ClockBarMiddle Wrapper SlideDown ShowInIntermission ShowInFinal ShowInBetweenJams ShowInNoClock Box BigName ClockDescription"
-            sbDisplay="Clock(Intermission).Number, Clock(*).Running, TimeoutOwner, OfficialReviews, ^Settings.Setting(ScoreBoard.Intermission.*), OfficialScore, ClockDuringFinalScore, Rule(Period.Number): ovlToClockType"
+            sbClass="Five: FiveSeconds"
+            sbDisplay="Clock(Intermission).Number, Clock(*).Running, TimeoutOwner, OfficialReviews, ^Settings.Setting(ScoreBoard.Intermission.*), OfficialScore, ClockDuringFinalScore, Rule(Period.Number), InJam, FiveSeconds, FiveIndicator: ovlToClockType"
           ></div>
           <div class="ClockBarBottom Wrapper SlideDown ShowInIntermission ShowInJam ShowInBetweenJams Row BottomRow barBackgroundBottom">
             <div
