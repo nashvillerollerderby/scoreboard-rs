@@ -12,18 +12,20 @@ pub use listener::JSONStateListener;
 pub use manager::JSONStateManager;
 pub use path_trie::PathTrie;
 pub use state_trie::StateTrie;
-
+use crate::Args;
 use crate::ws::Connections;
 
 pub struct ScoreboardState {
+    pub args: Args,
     pub connections: Arc<Mutex<Connections>>,
     pub state_manager: Arc<Mutex<JSONStateManager>>,
 }
 
 impl ScoreboardState {
-    pub fn new() -> Self {
+    pub fn new(args: Args) -> Self {
         let connections = Arc::new(Mutex::new(Connections::default()));
         ScoreboardState {
+            args,
             connections: connections.clone(),
             state_manager: Arc::new(Mutex::new(JSONStateManager::new(connections))),
         }

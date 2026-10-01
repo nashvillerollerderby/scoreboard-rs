@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("IO error: {0}")]
@@ -6,6 +8,10 @@ pub enum Error {
     Axum(#[from] axum::Error),
     #[error("serde_json error: {0}")]
     SerdeJSON(#[from] serde_json::Error),
+    #[error("local_ip_address error: {0}")]
+    LocalIPAddress(#[from] local_ip_address::Error),
+    #[error("ParseIntError: {0}")]
+    ParseIntError(#[from] ParseIntError)
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
