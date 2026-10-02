@@ -1,14 +1,19 @@
-use axum::Router;
+use axum::extract::State;
 use axum::response::IntoResponse;
 use axum::routing::{any, get};
+use axum::{Json, Router};
 use clap::Parser;
+use local_ip_address::{local_ip, local_ipv6};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tokio_stream::StreamExt;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
+pub(crate) mod event;
 pub(crate) mod error;
 mod logging;
 pub(crate) mod model;
@@ -19,6 +24,7 @@ mod ws;
 
 use crate::state::ScoreboardState;
 use error::Result;
+use scoreboard_rs::Args;
 use static_files::handle_directories_with_router;
 use ws::ws_handler;
 
@@ -26,36 +32,30 @@ pub const PENALTIES_RDCL: &str = include_str!("../config/penalties/RDCL.json");
 pub const PENALTIES_WFTDA_2016: &str = include_str!("../config/penalties/wftda2016.json");
 pub const PENALTIES_WFTDA_2018: &str = include_str!("../config/penalties/wftda2018.json");
 
-#[derive(Parser, Debug, Serialize, Deserialize)]
-#[command(version, about, long_about = None)]
-pub struct Args {
-    /// Show the GUI
-    #[arg(long, short, default_value_t = false)]
-    pub gui: bool,
-
-    /// Port on which to bind the web server
-    #[arg(long, short, default_value_t = 8000)]
-    pub port: i32,
-
-    /// Host address on which to bind the web server
-    #[arg(long, default_value = "0.0.0.0")]
-    pub host: String,
-
-    /// Path for files to import
-    #[arg(long, short)]
-    pub import: Option<String>,
-
-    /// Enable metrics
-    #[arg(long, short, default_value_t = false)]
-    pub metrics: bool,
-
-    /// The frequency in seconds that the autosave is triggered
-    #[arg(long)]
-    pub autosave_frequency_s: Option<u32>,
+pub async fn urls_route(State(shared_state): State<Arc<ScoreboardState>>) -> impl IntoResponse {
+    urls(&shared_state.args)
 }
 
-pub async fn urls() -> impl IntoResponse {
-    "0.0.0.0:8000\nlocalhost:8000"
+fn urls(args: &Args) -> String {
+    let port = args.port;
+
+    let mut hosts = vec![
+        format!("localhost:{}", port),
+        format!("0.0.0.0:{}", port),
+    ];
+
+    if let Ok(ipv4) = local_ip() {
+        hosts.push(format!("{}:{}", ipv4, port));
+    } else {
+        log::warn!("No IPV4 address found.");
+    }
+    if let Ok(ipv6) = local_ipv6() {
+        hosts.push(format!("{}:{}", ipv6, port));
+    } else {
+        log::warn!("No IPV6 address found.");
+    }
+
+    hosts.join(",\n")
 }
 
 async fn shutdown(app_state: Arc<ScoreboardState>) {
@@ -68,7 +68,7 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
-    let app_state = Arc::new(ScoreboardState::new());
+    let app_state = Arc::new(ScoreboardState::new(args.clone()));
 
     // TODO load version information p1
 
@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .route("/WS/", any(ws_handler))
-        .route("/urls", get(urls));
+        .route("/urls", get(urls_route));
 
     // Set up static serve directory for webserver
     #[cfg(target_os = "windows")]
@@ -98,7 +98,7 @@ async fn main() -> Result<()> {
         // TODO: init gui? p4
     }
 
-    log::info!("Starting server on {}:{}", args.host, args.port);
+    log::info!("Starting server on the following IPs:\n{}", urls(&args));
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", args.host, args.port)).await?;
     axum::serve(
         listener,
