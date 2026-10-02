@@ -91,24 +91,39 @@ pub trait ScoreBoardEventProvider: EventProvider + ValueWithId + Ord {
 
     fn run_in_batch(&self, r: impl Fn());
 
-    fn child_from_string<T: ValueWithId>(&self, child: Child, id: String, s_value: String) -> T;
-    fn get_child<T: ValueWithId>(&self, prop: Child, id: String) -> Option<T>;
-    fn get_or_create_child<T: EventProvider>(&self, prop: Child, id: String) -> T;
-    fn get_or_create_child_with_source<T: EventProvider>(
+    fn child_from_string<T: ValueWithId, C: Property<T>>(
         &self,
-        prop: Child,
+        child: C,
+        id: String,
+        s_value: String,
+    ) -> T;
+    fn get_child<T: ValueWithId, C: Property<T>>(&self, prop: C, id: String) -> Option<T>;
+    fn get_or_create_child<T: EventProvider, C: Property<T>>(&self, prop: C, id: String) -> T;
+    fn get_or_create_child_with_source<T: EventProvider, C: Property<T>>(
+        &self,
+        prop: C,
         id: String,
         source: Source,
     ) -> T;
-    fn get_all_children<T: ValueWithId>(&self, prop: Child) -> Vec<T>;
+    fn get_all_children<T: ValueWithId, C: Property<T>>(&self, prop: C) -> Vec<T>;
     fn number_of_children(&self, prop: Child) -> i32;
 
-    fn add_child<T: ValueWithId>(&self, prop: Child, item: T);
-    fn add_child_with_source<T: ValueWithId>(&self, prop: Child, item: T, source: Source);
+    fn add_child<T: ValueWithId, C: Property<T>>(&self, prop: C, item: T);
+    fn add_child_with_source<T: ValueWithId, C: Property<T>>(
+        &self,
+        prop: C,
+        item: T,
+        source: Source,
+    );
     fn remove_child(&self, prop: Child, id: String);
     fn remove_child_with_source(&self, prop: Child, id: String, source: Source);
-    fn remove_item<T: ValueWithId>(&self, prop: Child, item: T);
-    fn remove_item_with_source<T: ValueWithId>(&self, prop: Child, item: T, source: Source);
+    fn remove_item<T: ValueWithId, C: Property<T>>(&self, prop: C, item: T);
+    fn remove_item_with_source<T: ValueWithId, C: Property<T>>(
+        &self,
+        prop: C,
+        item: T,
+        source: Source,
+    );
     fn remove_all(&self, prop: Child);
     fn remove_all_with_source(&self, prop: Child, source: Source);
 
