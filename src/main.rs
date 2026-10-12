@@ -12,7 +12,9 @@ use tower_http::trace::TraceLayer;
 pub(crate) mod error;
 mod logging;
 pub(crate) mod model;
+pub(crate) mod rules;
 pub(crate) mod state;
+
 mod static_files;
 pub(crate) mod utils;
 mod ws;
